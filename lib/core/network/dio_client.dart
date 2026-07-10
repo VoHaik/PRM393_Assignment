@@ -29,6 +29,11 @@ class DioClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
+          // Normalize paths by removing trailing slashes (except for empty or root paths)
+          if (options.path.endsWith('/') && options.path.length > 1) {
+            options.path = options.path.substring(0, options.path.length - 1);
+          }
+          
           final skipAuth = options.extra['skipAuth'] == true;
           if (!skipAuth) {
             final token = await _secureStorageService.getAccessToken();

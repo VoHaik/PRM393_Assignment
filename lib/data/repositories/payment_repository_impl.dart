@@ -10,7 +10,8 @@ class PaymentRepositoryImpl implements PaymentRepository {
 
   @override
   Future<List<Tier>> getTiers() async {
-    final response = await _dio.get('/tiers');
+    // Correct backend path: GET /payments/tiers
+    final response = await _dio.get('/payments/tiers');
     final apiResponse = response.data;
     final List<dynamic> list = apiResponse['data'] is List ? apiResponse['data'] : [];
     return list.map((item) => TierModel.fromJson(item as Map<String, dynamic>)).toList();
@@ -18,8 +19,9 @@ class PaymentRepositoryImpl implements PaymentRepository {
 
   @override
   Future<CreateOrderResponse> createOrder(String tierId) async {
+    // Correct backend path: POST /payments/checkout (NOT /payments/orders)
     final response = await _dio.post(
-      '/payments/orders',
+      '/payments/checkout',
       data: {'tierId': tierId},
     );
     final apiResponse = response.data;
@@ -28,30 +30,46 @@ class PaymentRepositoryImpl implements PaymentRepository {
 
   @override
   Future<void> cancelOrder(String orderId) async {
-    // The backend uses orderCode (number) for cancellations. 
-    // We try to parse the orderId string to int if possible, or fallback to the string directly.
-    final orderCode = int.tryParse(orderId) ?? orderId;
-    await _dio.post('/payments/orders/$orderCode/cancel');
+    // Backend does not have a cancel-by-orderCode endpoint.
+    // Use POST /payments/payos/return to notify backend of cancellation.
+    await _dio.post(
+      '/payments/payos/return',
+      data: {
+        'orderCode': int.tryParse(orderId) ?? orderId,
+        'cancel': true,
+        'status': 'CANCELLED',
+      },
+    );
   }
 
   @override
   Future<OrderStatusResponse> getOrderStatus(String orderId) async {
-    final orderCode = int.tryParse(orderId) ?? orderId;
-    final response = await _dio.get('/payments/orders/$orderCode');
+    // Backend does not have a single-order status lookup by orderCode.
+    // Fall back to fetching the payment history and finding the matching order.
+    final response = await _dio.get('/payments/me');
     final apiResponse = response.data;
-    return OrderStatusResponseModel.fromJson(apiResponse['data']);
+    final List<dynamic> list = apiResponse['data'] is List ? apiResponse['data'] : [];
+    final allOrders = list
+        .map((item) => OrderHistoryItemModel.fromJson(item as Map<String, dynamic>))
+        .toList();
+
+    final orderCode = int.tryParse(orderId);
+    final match = allOrders.firstWhere(
+      (o) => o.orderCode.toString() == orderId || (orderCode != null && o.orderCode == orderCode),
+      orElse: () => throw Exception('Order not found: $orderId'),
+    );
+
+    return OrderStatusResponseModel.fromOrderHistoryItem(match);
   }
 
   @override
   Future<List<OrderHistoryItem>> getMyOrders({int page = 0, int size = 10}) async {
-    final response = await _dio.get(
-      '/payments/orders',
-      queryParameters: {'page': page, 'size': size},
-    );
+    // Correct backend path: GET /payments/me (NOT /payments/orders)
+    // Note: backend GET /payments/me does NOT support pagination params;
+    // it returns all orders for the current user.
+    final response = await _dio.get('/payments/me');
     final apiResponse = response.data;
-    final content = apiResponse['data'] != null && apiResponse['data']['content'] != null
-        ? apiResponse['data']['content'] as List
-        : [];
-    return content.map((item) => OrderHistoryItemModel.fromJson(item as Map<String, dynamic>)).toList();
+    final List<dynamic> list = apiResponse['data'] is List ? apiResponse['data'] : [];
+    return list.map((item) => OrderHistoryItemModel.fromJson(item as Map<String, dynamic>)).toList();
   }
 }

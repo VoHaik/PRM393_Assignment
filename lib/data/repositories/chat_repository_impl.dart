@@ -166,11 +166,20 @@ class ChatRepositoryImpl implements ChatRepository {
     String? characterId,
     String? contextId,
   }) async {
-    final Map<String, String> query = {};
-    if (characterId != null) query['characterId'] = characterId;
-    if (contextId != null) query['contextId'] = contextId;
+    // Backend requires BOTH characterId and contextId as mandatory @RequestParam.
+    // Calling without them results in a 400 Bad Request.
+    if (characterId == null || characterId.isEmpty ||
+        contextId == null || contextId.isEmpty) {
+      return []; // Return empty list rather than making an invalid API call
+    }
 
-    final response = await _dio.get('/chat/sessions', queryParameters: query);
+    final response = await _dio.get(
+      '/chat/sessions',
+      queryParameters: {
+        'characterId': characterId,
+        'contextId': contextId,
+      },
+    );
     final apiResponse = response.data;
     final List<dynamic> list = apiResponse['data'] is List ? apiResponse['data'] : [];
     return list.map((item) => ChatSessionModel.fromJson(item as Map<String, dynamic>)).toList();

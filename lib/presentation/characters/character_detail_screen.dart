@@ -42,8 +42,7 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> with Sing
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _loadCharacterData();
-    _loadSessions();
+    _loadCharacterThenSessions();
   }
 
   @override
@@ -52,23 +51,35 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> with Sing
     super.dispose();
   }
 
-  Future<void> _loadCharacterData() async {
+  /// Load character first, then use its contextId to load sessions.
+  Future<void> _loadCharacterThenSessions() async {
     try {
       final char = await _charRepository.getCharacterById(widget.characterId);
       setState(() {
         _character = char;
         _isLoadingChar = false;
       });
+      // Sessions require both characterId + contextId (backend constraint)
+      final contextId = char.contexts?.isNotEmpty == true ? char.contexts!.first.id : null;
+      if (contextId != null) {
+        await _loadSessions(contextId: contextId);
+      } else {
+        setState(() => _isLoadingSessions = false);
+      }
     } catch (_) {
       setState(() {
         _isLoadingChar = false;
+        _isLoadingSessions = false;
       });
     }
   }
 
-  Future<void> _loadSessions() async {
+  Future<void> _loadSessions({String? contextId}) async {
     try {
-      final sessions = await _chatRepository.getSessions(characterId: widget.characterId);
+      final sessions = await _chatRepository.getSessions(
+        characterId: widget.characterId,
+        contextId: contextId,
+      );
       setState(() {
         _sessions = sessions;
         _isLoadingSessions = false;

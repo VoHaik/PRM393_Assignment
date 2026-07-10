@@ -107,6 +107,22 @@ class OrderStatusResponseModel extends OrderStatusResponse {
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
+
+  /// Converts an OrderHistoryItem to OrderStatusResponse.
+  /// Used as a fallback since the backend has no single-order-by-code endpoint.
+  factory OrderStatusResponseModel.fromOrderHistoryItem(OrderHistoryItem item) {
+    return OrderStatusResponseModel(
+      orderId: item.orderId,
+      orderCode: item.orderCode,
+      amount: item.amount,
+      status: item.status,
+      tierId: '',
+      checkoutUrl: item.checkoutUrl,
+      qrCode: null,
+      paidAt: item.paidAt,
+      createdAt: item.createdAt,
+    );
+  }
 }
 
 class OrderHistoryItemModel extends OrderHistoryItem {
