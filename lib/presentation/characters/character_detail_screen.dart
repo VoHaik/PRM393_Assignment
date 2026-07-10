@@ -8,6 +8,7 @@ import '../../domain/repositories/character_repository.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../chat/chat_bloc.dart';
 import '../widgets/context_card.dart';
+import '../historical_context/historical_context_detail_screen.dart';
 import '../../injection_container.dart';
 import '../../core/theme/app_theme.dart';
 
@@ -404,35 +405,42 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> with Sing
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Associated Contexts list
+          // Associated Contexts list (Sự kiện nổi bật)
           if (_character!.contexts != null && _character!.contexts!.isNotEmpty) ...[
             Column(
               children: _character!.contexts!.map((ctx) {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 10.0),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: accentColor.withOpacity(0.2)),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(color: accentColor, shape: BoxShape.circle),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            ctx.name,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => HistoricalContextDetailScreen(contextId: ctx.id),
+                      ));
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: accentColor.withOpacity(0.2)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(color: accentColor, shape: BoxShape.circle),
                           ),
-                        ),
-                        Icon(LucideIcons.chevronRight, size: 18, color: accentColor),
-                      ],
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              ctx.name,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                          ),
+                          Icon(LucideIcons.chevronRight, size: 18, color: accentColor),
+                        ],
+                      ),
                     ),
                   ),
                 );

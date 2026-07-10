@@ -93,8 +93,32 @@ class HistoricalContextModel extends HistoricalContext {
   });
 
   factory HistoricalContextModel.fromJson(Map<String, dynamic> json) {
+    // Backend uses "contextId" not "id"
+    final id = json['contextId'] as String?
+        ?? json['id'] as String?
+        ?? json['_id'] as String?
+        ?? '';
+
+    // Backend uses "status": "ACTIVE" not isActive boolean
+    final statusStr = json['status'] as String?;
+    final isActive = statusStr != null
+        ? statusStr.toUpperCase() == 'ACTIVE'
+        : (json['isActive'] as bool? ?? false);
+
+    // Backend uses "imageUrl" for context images (not "image")
+    final image = json['imageUrl'] as String? ?? json['image'] as String?;
+
+    // Backend uses "createdDate" / "updatedDate"
+    DateTime parseDate(String key1, String key2) {
+      final v = json[key1] ?? json[key2];
+      if (v is String && v.isNotEmpty) {
+        try { return DateTime.parse(v); } catch (_) {}
+      }
+      return DateTime.now();
+    }
+
     return HistoricalContextModel(
-      id: json['id'] as String? ?? json['_id'] as String? ?? '',
+      id: id,
       name: json['name'] as String? ?? '',
       description: json['description'] as String?,
       era: parseCharacterEra(json['era'] as String?),
@@ -107,7 +131,7 @@ class HistoricalContextModel extends HistoricalContext {
       isBC: json['isBC'] as bool?,
       period: json['period'] as String?,
       location: json['location'] as String?,
-      image: json['image'] as String?,
+      image: image,
       videoUrl: json['videoUrl'] as String?,
       characterIds: json['characterIds'] != null
           ? (json['characterIds'] as List)
@@ -115,14 +139,10 @@ class HistoricalContextModel extends HistoricalContext {
               .toList()
           : [],
       isPublished: json['isPublished'] as bool? ?? false,
-      isActive: json['isActive'] as bool? ?? false,
+      isActive: isActive,
       yearLabel: json['yearLabel'] as String?,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : DateTime.now(),
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
-          : DateTime.now(),
+      createdAt: parseDate('createdDate', 'createdAt'),
+      updatedAt: parseDate('updatedDate', 'updatedAt'),
     );
   }
 

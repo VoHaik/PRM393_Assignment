@@ -285,7 +285,7 @@ class _FullCard extends StatelessWidget {
                     ctx.name,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, height: 1.2),
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, height: 1.2),
                   ),
                   const SizedBox(height: 4),
                   if (yearTxt.isNotEmpty || (ctx.location != null && ctx.location!.isNotEmpty))
@@ -294,18 +294,6 @@ class _FullCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(fontSize: 11, color: theme.textTheme.bodyMedium?.color),
-                    ),
-                  const SizedBox(height: 4),
-                  if (ctx.description != null && ctx.description!.isNotEmpty)
-                    Text(
-                      ctx.description!,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: theme.textTheme.bodyMedium?.color?.withOpacity(0.85),
-                        height: 1.3,
-                      ),
                     ),
                 ],
               ),

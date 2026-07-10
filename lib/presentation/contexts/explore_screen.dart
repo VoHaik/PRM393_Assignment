@@ -8,6 +8,8 @@ import '../../domain/repositories/historical_context_repository.dart';
 import '../../injection_container.dart';
 import '../widgets/context_card.dart';
 import '../../core/theme/app_theme.dart';
+import '../historical_context/historical_context_detail_screen.dart';
+
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
@@ -232,7 +234,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 0.78, // Aligned with React Native card proportions
+        childAspectRatio: 0.73, // Adjusted to prevent layout overflow on text
       ),
       itemCount: _filteredContexts.length,
       itemBuilder: (context, index) {
@@ -240,13 +242,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
         return ContextCard(
           ctx: ctx,
           onPress: () {
-            // Navigate to context detail screen
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (_) => Scaffold(
-                  appBar: AppBar(title: Text(ctx.name)),
-                  body: Center(child: Text('Chi tiết bối cảnh: ${ctx.name}')),
-                ),
+                builder: (_) => HistoricalContextDetailScreen(context: ctx),
               ),
             );
           },
@@ -262,7 +260,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 0.78,
+        childAspectRatio: 0.73,
       ),
       itemCount: 6,
       itemBuilder: (context, index) {

@@ -31,29 +31,21 @@ class CharacterContextModel extends CharacterContext {
   const CharacterContextModel({required super.id, required super.name});
 
   factory CharacterContextModel.fromJson(Map<String, dynamic> json) {
-    // Check if contextId is nested or flat
-    final idMap = json['contextId'];
-    if (idMap is Map) {
-      return CharacterContextModel(
-        id: idMap['id'] as String? ?? idMap['_id'] as String? ?? '',
-        name: json['name'] as String? ?? idMap['name'] as String? ?? '',
-      );
-    }
+    // Backend returns: { "contextId": "uuid-string", "name": "..." }
+    // contextId is a plain String (not a nested Map)
+    final rawId = json['contextId'];
+    final id = rawId is String
+        ? rawId
+        : rawId is Map
+            ? (rawId['id'] as String? ?? rawId['_id'] as String? ?? '')
+            : (json['id'] as String? ?? json['_id'] as String? ?? '');
     return CharacterContextModel(
-      id: json['id'] as String? ?? json['_id'] as String? ?? '',
+      id: id,
       name: json['name'] as String? ?? '',
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'contextId': {
-        'id': id,
-        'name': name,
-      },
-      'name': name,
-    };
-  }
+  Map<String, dynamic> toJson() => {'contextId': id, 'name': name};
 }
 
 class CharacterModel extends Character {
@@ -83,8 +75,35 @@ class CharacterModel extends Character {
   });
 
   factory CharacterModel.fromJson(Map<String, dynamic> json) {
+    // Backend uses "characterId", not "id"
+    final id = json['characterId'] as String?
+        ?? json['id'] as String?
+        ?? json['_id'] as String?
+        ?? '';
+
+    // Backend uses "status": "ACTIVE" / "INACTIVE" instead of isActive boolean
+    final statusStr = json['status'] as String?;
+    final isActive = statusStr != null
+        ? statusStr.toUpperCase() == 'ACTIVE'
+        : (json['isActive'] as bool? ?? false);
+
+    // Backend uses "contexts": [{ "contextId": "uuid", "name": "..." }]
+    final contextsRaw = json['contexts'] as List?;
+    final contexts = contextsRaw
+        ?.map((c) => CharacterContextModel.fromJson(c as Map<String, dynamic>))
+        .toList();
+
+    // Backend uses "createdDate" / "updatedDate" (not createdAt/updatedAt)
+    DateTime parseDate(String? key1, String? key2) {
+      final v = json[key1] ?? json[key2];
+      if (v is String && v.isNotEmpty) {
+        try { return DateTime.parse(v); } catch (_) {}
+      }
+      return DateTime.now();
+    }
+
     return CharacterModel(
-      id: json['id'] as String? ?? json['_id'] as String? ?? '',
+      id: id,
       name: json['name'] as String? ?? '',
       title: json['title'] as String?,
       background: json['background'] as String?,
@@ -102,18 +121,10 @@ class CharacterModel extends Character {
       era: json['era'] != null ? parseCharacterEra(json['era'] as String) : null,
       personality: json['personality'] as String?,
       isPublished: json['isPublished'] as bool? ?? false,
-      isActive: json['isActive'] as bool? ?? false,
-      contexts: json['contexts'] != null
-          ? (json['contexts'] as List)
-              .map((c) => CharacterContextModel.fromJson(c as Map<String, dynamic>))
-              .toList()
-          : null,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : DateTime.now(),
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
-          : DateTime.now(),
+      isActive: isActive,
+      contexts: contexts,
+      createdAt: parseDate('createdDate', 'createdAt'),
+      updatedAt: parseDate('updatedDate', 'updatedAt'),
     );
   }
 

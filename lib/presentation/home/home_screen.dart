@@ -11,6 +11,7 @@ import '../../domain/repositories/character_repository.dart';
 import '../../domain/repositories/historical_context_repository.dart';
 import '../../injection_container.dart';
 import '../../core/theme/app_theme.dart';
+import '../historical_context/historical_context_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -251,7 +252,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ctx: ctx,
                                     variant: 'compact',
                                     onPress: () {
-                                      // Action to view context detail
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (_) => HistoricalContextDetailScreen(context: ctx),
+                                        ),
+                                      );
                                     },
                                   ),
                                 );
