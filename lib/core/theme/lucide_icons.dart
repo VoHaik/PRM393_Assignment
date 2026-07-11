@@ -15,6 +15,7 @@ class LucideIcons {
   static const IconData mic = Icons.mic_none;
   static const IconData send = Icons.send;
   static const IconData volume2 = Icons.volume_up;
+  static const IconData volumeX = Icons.volume_off;
   static const IconData search = Icons.search;
   static const IconData badgeCheck = Icons.verified;
   static const IconData clock = Icons.access_time;

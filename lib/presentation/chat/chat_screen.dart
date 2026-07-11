@@ -108,6 +108,20 @@ class _ChatScreenState extends State<ChatScreen> {
           backgroundColor: theme.scaffoldBackgroundColor,
           elevation: 0.5,
           actions: [
+            BlocBuilder<ChatBloc, ChatState>(
+              builder: (context, state) {
+                return IconButton(
+                  icon: Icon(
+                    state.autoSpeak ? LucideIcons.volume2 : LucideIcons.volumeX,
+                    color: state.autoSpeak ? accentColor : textMuted,
+                  ),
+                  tooltip: state.autoSpeak ? 'Tắt tự động đọc' : 'Bật tự động đọc',
+                  onPressed: () {
+                    _chatBloc.add(ToggleAutoSpeakRequested());
+                  },
+                );
+              },
+            ),
             IconButton(
               icon: const Icon(LucideIcons.phoneCall),
               onPressed: () {
@@ -198,6 +212,49 @@ class _ChatScreenState extends State<ChatScreen> {
                             ),
                           ),
                         ],
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+
+              // Suggested Questions
+              BlocBuilder<ChatBloc, ChatState>(
+                builder: (context, state) {
+                  if (state.suggestedQuestions.isNotEmpty && !state.isSending) {
+                    return Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: theme.scaffoldBackgroundColor,
+                        border: Border(top: BorderSide(color: borderColor)),
+                      ),
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        itemCount: state.suggestedQuestions.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        itemBuilder: (context, index) {
+                          final question = state.suggestedQuestions[index];
+                          return ActionChip(
+                            label: Text(
+                              question,
+                              style: TextStyle(fontSize: 12, color: textMuted),
+                            ),
+                            backgroundColor: surfaceColor,
+                            side: BorderSide(color: borderColor),
+                            onPressed: () {
+                              _chatBloc.add(
+                                SendMessageSubmitted(
+                                  sessionId: widget.sessionId,
+                                  content: question,
+                                  messageType: ChatMessageType.text,
+                                ),
+                              );
+                              _scrollToBottom();
+                            },
+                          );
+                        },
                       ),
                     );
                   }

@@ -32,15 +32,34 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  Future<List<ChatMessage>> getMessages(String sessionId) async {
+  Future<SessionMessagesResponse> getMessages(String sessionId) async {
     final response = await _dio.get('/chat/sessions/$sessionId/messages');
     final apiResponse = response.data;
-    final List<dynamic> list = apiResponse['data'] is List ? apiResponse['data'] : [];
-    return list.map((item) => ChatMessageModel.fromJson(item as Map<String, dynamic>)).toList();
+    final data = apiResponse['data'];
+
+    List<ChatMessage> messages = [];
+    List<String> suggestedQuestions = [];
+
+    if (data != null) {
+      if (data is List) {
+        messages = data.map((item) => ChatMessageModel.fromJson(item as Map<String, dynamic>)).toList();
+      } else if (data is Map) {
+        final msgs = data['messages'];
+        if (msgs is List) {
+          messages = msgs.map((item) => ChatMessageModel.fromJson(item as Map<String, dynamic>)).toList();
+        }
+        final sq = data['suggestedQuestions'];
+        if (sq is List) {
+          suggestedQuestions = sq.map((e) => e.toString()).toList();
+        }
+      }
+    }
+
+    return SessionMessagesResponse(messages: messages, suggestedQuestions: suggestedQuestions);
   }
 
   @override
-  Future<List<ChatMessage>> sendMessage({
+  Future<SendMessageResponse> sendMessage({
     required String sessionId,
     required String content,
     required ChatMessageType messageType,
@@ -57,14 +76,31 @@ class ChatRepositoryImpl implements ChatRepository {
     final apiResponse = response.data;
     final data = apiResponse['data'];
 
-    final List<ChatMessage> result = [];
-    if (data['message'] != null) {
-      result.add(ChatMessageModel.fromJson(data['message']));
+    ChatMessage userMessage;
+    ChatMessage? assistantMessage;
+    List<String> suggestedQuestions = [];
+
+    if (data['userMessage'] != null) {
+      userMessage = ChatMessageModel.fromJson(data['userMessage']);
+    } else if (data['message'] != null) {
+      userMessage = ChatMessageModel.fromJson(data['message']);
+    } else {
+      throw Exception("Missing user message in response");
     }
+
     if (data['assistantMessage'] != null) {
-      result.add(ChatMessageModel.fromJson(data['assistantMessage']));
+      assistantMessage = ChatMessageModel.fromJson(data['assistantMessage']);
     }
-    return result;
+
+    if (data['suggestedQuestions'] is List) {
+      suggestedQuestions = (data['suggestedQuestions'] as List).map((e) => e.toString()).toList();
+    }
+
+    return SendMessageResponse(
+      userMessage: userMessage,
+      assistantMessage: assistantMessage,
+      suggestedQuestions: suggestedQuestions,
+    );
   }
 
   @override
@@ -80,7 +116,10 @@ class ChatRepositoryImpl implements ChatRepository {
         'content': content,
         'messageType': serializeChatMessageType(messageType),
       },
-      options: Options(responseType: ResponseType.stream),
+      options: Options(
+        responseType: ResponseType.stream,
+        headers: {'Accept': 'text/event-stream'},
+      ),
     );
 
     final Stream<Uint8List> byteStream = (response.data as ResponseBody).stream;

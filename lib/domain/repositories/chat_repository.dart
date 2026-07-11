@@ -8,9 +8,9 @@ abstract class ChatRepository {
     required String contextId,
   });
 
-  Future<List<ChatMessage>> getMessages(String sessionId);
+  Future<SessionMessagesResponse> getMessages(String sessionId);
 
-  Future<List<ChatMessage>> sendMessage({
+  Future<SendMessageResponse> sendMessage({
     required String sessionId,
     required String content,
     required ChatMessageType messageType,

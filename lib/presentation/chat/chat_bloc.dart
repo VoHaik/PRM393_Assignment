@@ -58,10 +58,13 @@ class SpeechWordsChanged extends ChatEvent {
   SpeechWordsChanged({required this.words, required this.isFinal});
 }
 
+class ToggleAutoSpeakRequested extends ChatEvent {}
+
 // --- STATE ---
 class ChatState {
   final List<ChatSession> sessions;
   final List<ChatMessage> messages;
+  final List<String> suggestedQuestions;
   final bool isSessionsLoading;
   final bool isMessagesLoading;
   final bool isSending;
@@ -69,11 +72,13 @@ class ChatState {
   final String? speakingMessageId;
   final bool isRecording;
   final String recordedText;
+  final bool autoSpeak;
   final String? error;
 
   ChatState({
     this.sessions = const [],
     this.messages = const [],
+    this.suggestedQuestions = const [],
     this.isSessionsLoading = false,
     this.isMessagesLoading = false,
     this.isSending = false,
@@ -81,12 +86,14 @@ class ChatState {
     this.speakingMessageId,
     this.isRecording = false,
     this.recordedText = '',
+    this.autoSpeak = false,
     this.error,
   });
 
   ChatState copyWith({
     List<ChatSession>? sessions,
     List<ChatMessage>? messages,
+    List<String>? suggestedQuestions,
     bool? isSessionsLoading,
     bool? isMessagesLoading,
     bool? isSending,
@@ -94,11 +101,13 @@ class ChatState {
     String? speakingMessageId,
     bool? isRecording,
     String? recordedText,
+    bool? autoSpeak,
     String? error,
   }) {
     return ChatState(
       sessions: sessions ?? this.sessions,
       messages: messages ?? this.messages,
+      suggestedQuestions: suggestedQuestions ?? this.suggestedQuestions,
       isSessionsLoading: isSessionsLoading ?? this.isSessionsLoading,
       isMessagesLoading: isMessagesLoading ?? this.isMessagesLoading,
       isSending: isSending ?? this.isSending,
@@ -106,6 +115,7 @@ class ChatState {
       speakingMessageId: speakingMessageId ?? this.speakingMessageId,
       isRecording: isRecording ?? this.isRecording,
       recordedText: recordedText ?? this.recordedText,
+      autoSpeak: autoSpeak ?? this.autoSpeak,
       error: error,
     );
   }
@@ -135,6 +145,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<StartVoiceRecordingRequested>(_onStartVoiceRecordingRequested);
     on<StopVoiceRecordingRequested>(_onStopVoiceRecordingRequested);
     on<SpeechWordsChanged>(_onSpeechWordsChanged);
+    on<ToggleAutoSpeakRequested>(_onToggleAutoSpeakRequested);
   }
 
   Future<void> _onFetchSessionsRequested(
@@ -174,8 +185,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       FetchMessagesRequested event, Emitter<ChatState> emit) async {
     emit(state.copyWith(isMessagesLoading: true));
     try {
-      final messages = await _chatRepository.getMessages(event.sessionId);
-      emit(state.copyWith(messages: messages, isMessagesLoading: false));
+      final response = await _chatRepository.getMessages(event.sessionId);
+      emit(state.copyWith(
+          messages: response.messages,
+          suggestedQuestions: response.suggestedQuestions,
+          isMessagesLoading: false));
     } catch (e) {
       emit(state.copyWith(error: e.toString(), isMessagesLoading: false));
     }
@@ -214,8 +228,20 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       );
 
       // 3. Once stream is complete, reload all messages from server to get token count and proper message IDs
-      final freshMessages = await _chatRepository.getMessages(event.sessionId);
-      emit(state.copyWith(messages: freshMessages, isSending: false, streamingText: null));
+      final freshResponse = await _chatRepository.getMessages(event.sessionId);
+      emit(state.copyWith(
+          messages: freshResponse.messages,
+          suggestedQuestions: freshResponse.suggestedQuestions,
+          isSending: false,
+          streamingText: null));
+
+      // Auto-speak if enabled
+      if (state.autoSpeak && freshResponse.messages.isNotEmpty) {
+        final lastMsg = freshResponse.messages.last;
+        if (lastMsg.senderType == SenderType.assistant && lastMsg.content.isNotEmpty) {
+          add(PlayVoiceRequested(messageId: lastMsg.id, content: lastMsg.content));
+        }
+      }
     } catch (e) {
       emit(state.copyWith(error: e.toString(), isSending: false, streamingText: null));
     }
@@ -281,6 +307,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       recordedText: event.words,
       isRecording: !event.isFinal, // Stop recording state if it's final
     ));
+  }
+
+  Future<void> _onToggleAutoSpeakRequested(
+      ToggleAutoSpeakRequested event, Emitter<ChatState> emit) async {
+    emit(state.copyWith(autoSpeak: !state.autoSpeak));
   }
 
   @override

@@ -7,10 +7,12 @@ import '../../domain/entities/chat.dart';
 import '../../domain/repositories/character_repository.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../chat/chat_bloc.dart';
+import '../chat/chat_screen.dart';
 import '../widgets/context_card.dart';
 import '../historical_context/historical_context_detail_screen.dart';
 import '../../injection_container.dart';
 import '../../core/theme/app_theme.dart';
+import '../../data/models/chat_model.dart';
 
 const Map<CharacterEra, Color> eraHeroBgs = {
   CharacterEra.ancient: Color(0xFF2C1810),
@@ -157,9 +159,9 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> with Sing
 
     try {
       // Look for existing session
-      final existing = _sessions.firstWhere(
+      final existing = _sessions.cast<ChatSession>().firstWhere(
         (s) => s.contextId == contextId,
-        orElse: () => const ChatSession(
+        orElse: () => const ChatSessionModel(
           id: '',
           characterId: '',
           contextId: '',
@@ -187,9 +189,10 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> with Sing
       // Navigate to chat room screen
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => Scaffold(
-            appBar: AppBar(title: Text('Trò chuyện với ${_character!.name}')),
-            body: Center(child: Text('Trò chuyện session: $sessionId')),
+          builder: (_) => ChatScreen(
+            sessionId: sessionId,
+            characterName: _character!.name,
+            characterImageUrl: _character!.imageUrl ?? _character!.image,
           ),
         ),
       );

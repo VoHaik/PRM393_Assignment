@@ -73,3 +73,25 @@ class ChatHistoryGroup {
     required this.sessions,
   });
 }
+
+class SessionMessagesResponse {
+  final List<ChatMessage> messages;
+  final List<String> suggestedQuestions;
+
+  const SessionMessagesResponse({
+    required this.messages,
+    required this.suggestedQuestions,
+  });
+}
+
+class SendMessageResponse {
+  final ChatMessage userMessage;
+  final ChatMessage? assistantMessage;
+  final List<String> suggestedQuestions;
+
+  const SendMessageResponse({
+    required this.userMessage,
+    this.assistantMessage,
+    required this.suggestedQuestions,
+  });
+}
