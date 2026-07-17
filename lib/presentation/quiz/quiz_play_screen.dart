@@ -28,6 +28,27 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
     final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
 
     final questions = widget.session.questions;
+    if (questions.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(
+            widget.session.title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        body: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Text(
+              'Bài trắc nghiệm này chưa có câu hỏi. Vui lòng thử lại sau.',
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      );
+    }
     final limitTime = widget.session.limitedTime > 0
         ? widget.session.limitedTime
         : widget.session.durationSeconds;
