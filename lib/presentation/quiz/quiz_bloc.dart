@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/quiz.dart';
 import '../../domain/repositories/quiz_repository.dart';
 
+const Object _sentinel = Object();
+
 // --- EVENTS ---
 abstract class QuizEvent {}
 
@@ -63,26 +65,30 @@ class QuizState {
   QuizState copyWith({
     List<Quiz>? quizzes,
     bool? isQuizzesLoading,
-    QuizSession? activeSession,
+    Object? activeSession = _sentinel,
     Map<String, int>? userAnswers,
     int? elapsedSeconds,
     bool? isSubmitting,
-    QuizResult? finishedResult,
+    Object? finishedResult = _sentinel,
     List<MyResult>? history,
     bool? isHistoryLoading,
-    String? error,
+    Object? error = _sentinel,
   }) {
     return QuizState(
       quizzes: quizzes ?? this.quizzes,
       isQuizzesLoading: isQuizzesLoading ?? this.isQuizzesLoading,
-      activeSession: activeSession ?? this.activeSession,
+      activeSession: identical(activeSession, _sentinel)
+          ? this.activeSession
+          : activeSession as QuizSession?,
       userAnswers: userAnswers ?? this.userAnswers,
       elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
       isSubmitting: isSubmitting ?? this.isSubmitting,
-      finishedResult: finishedResult ?? this.finishedResult,
+      finishedResult: identical(finishedResult, _sentinel)
+          ? this.finishedResult
+          : finishedResult as QuizResult?,
       history: history ?? this.history,
       isHistoryLoading: isHistoryLoading ?? this.isHistoryLoading,
-      error: error,
+      error: identical(error, _sentinel) ? this.error : error as String?,
     );
   }
 }
@@ -118,7 +124,11 @@ class QuizBloc extends Bloc<QuizEvent, QuizState> {
   Future<void> _onStartQuizSessionRequested(
       StartQuizSessionRequested event, Emitter<QuizState> emit) async {
     _timer?.cancel();
-    emit(state.copyWith(isQuizzesLoading: true, finishedResult: null));
+    emit(state.copyWith(
+      isQuizzesLoading: true,
+      finishedResult: null,
+      error: null,
+    ));
     try {
       final session = await _quizRepository.startQuiz(event.quizId);
       emit(state.copyWith(
