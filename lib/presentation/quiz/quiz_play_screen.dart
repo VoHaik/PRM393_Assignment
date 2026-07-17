@@ -18,11 +18,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
   int _currentQuestionIndex = 0;
   bool _handledEmptySessionExit = false;
 
-  void _clearQuizStateAndPop(BuildContext context) {
-    context.read<QuizBloc>().add(ClearQuizStateRequested());
-    Navigator.pop(context);
-  }
-
   void _handleEmptySessionExit() {
     if (_handledEmptySessionExit) {
       return;
