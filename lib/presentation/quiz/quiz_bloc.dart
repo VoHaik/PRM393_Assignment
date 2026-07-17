@@ -138,10 +138,12 @@ class QuizBloc extends Bloc<QuizEvent, QuizState> {
         isQuizzesLoading: false,
       ));
 
-      // Start the timer
-      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        add(TimerTicked());
-      });
+      if (session.questions.isNotEmpty) {
+        // Start the timer
+        _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+          add(TimerTicked());
+        });
+      }
     } catch (e) {
       emit(state.copyWith(error: e.toString(), isQuizzesLoading: false));
     }
