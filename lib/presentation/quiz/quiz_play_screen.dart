@@ -17,6 +17,11 @@ class QuizPlayScreen extends StatefulWidget {
 class _QuizPlayScreenState extends State<QuizPlayScreen> {
   int _currentQuestionIndex = 0;
 
+  void _clearQuizStateAndPop(BuildContext context) {
+    context.read<QuizBloc>().add(ClearQuizStateRequested());
+    Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -28,27 +33,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
     final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
 
     final questions = widget.session.questions;
-    if (questions.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text(
-            widget.session.title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-        ),
-        body: const Center(
-          child: Padding(
-            padding: EdgeInsets.all(24.0),
-            child: Text(
-              'Bài trắc nghiệm này chưa có câu hỏi. Vui lòng thử lại sau.',
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ),
-      );
-    }
     final limitTime = widget.session.limitedTime > 0
         ? widget.session.limitedTime
         : widget.session.durationSeconds;
@@ -68,6 +52,43 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         }
       },
       builder: (context, state) {
+        if (questions.isEmpty) {
+          return Scaffold(
+            appBar: AppBar(
+              title: Text(
+                widget.session.title,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => _clearQuizStateAndPop(context),
+              ),
+            ),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Bài trắc nghiệm này chưa có câu hỏi. Vui lòng thử lại sau.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      onPressed: () => _clearQuizStateAndPop(context),
+                      icon: const Icon(Icons.close),
+                      label: const Text('Tho�t'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
         final currentQuestion = questions[_currentQuestionIndex];
         final selectedAnswer = state.userAnswers[currentQuestion.questionId];
 
