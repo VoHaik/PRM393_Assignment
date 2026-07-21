@@ -95,7 +95,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
                       OutlinedButton.icon(
                         onPressed: _handleEmptySessionExit,
                         icon: const Icon(Icons.close),
-                        label: const Text('Thoát'),
+                        label: const Text('Thoï¿½t'),
                       ),
                     ],
                   ),
