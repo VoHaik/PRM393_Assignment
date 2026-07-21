@@ -53,7 +53,8 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  void _onSend() {
+  void _onSend(ChatState state) {
+    if (state.isSending) return;
     final text = _inputController.text.trim();
     if (text.isNotEmpty) {
       _chatBloc.add(
@@ -66,6 +67,15 @@ class _ChatScreenState extends State<ChatScreen> {
       _inputController.clear();
       _scrollToBottom();
     }
+  }
+
+  /// Splits assistant message content by '---' separator (same logic as web).
+  List<String> _splitAssistantContent(String content) {
+    return content
+        .split(RegExp(r'\s*-{3,}\s*'))
+        .map((p) => p.trim())
+        .where((p) => p.isNotEmpty)
+        .toList();
   }
 
   void _toggleRecording(bool isRecording) {
@@ -271,6 +281,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 child: BlocBuilder<ChatBloc, ChatState>(
                   builder: (context, state) {
+                    final isLocked = state.isSending || state.isRecording;
                     return Row(
                       children: [
                         // Speech Recording Mic Button
@@ -279,37 +290,60 @@ class _ChatScreenState extends State<ChatScreen> {
                             state.isRecording ? Icons.stop : LucideIcons.mic,
                             color: state.isRecording ? Colors.red : accentColor,
                           ),
-                          onPressed: () => _toggleRecording(state.isRecording),
+                          onPressed: state.isSending
+                              ? null
+                              : () => _toggleRecording(state.isRecording),
                         ),
-                        
+
                         // Text input field
                         Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: surfaceColor,
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: borderColor),
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: TextField(
-                              controller: _inputController,
-                              maxLines: null,
-                              decoration: InputDecoration(
-                                hintText: state.isRecording ? 'Đang lắng nghe...' : 'Nhập tin nhắn...',
-                                hintStyle: TextStyle(color: textMuted),
-                                border: InputBorder.none,
+                          child: AnimatedOpacity(
+                            opacity: state.isSending ? 0.5 : 1.0,
+                            duration: const Duration(milliseconds: 200),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: surfaceColor,
+                                borderRadius: BorderRadius.circular(24),
+                                border: Border.all(color: borderColor),
                               ),
-                              onSubmitted: (_) => _onSend(),
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                              child: TextField(
+                                controller: _inputController,
+                                maxLines: null,
+                                enabled: !isLocked,
+                                decoration: InputDecoration(
+                                  hintText: state.isSending
+                                      ? 'Đang chờ phản hồi...'
+                                      : state.isRecording
+                                          ? 'Đang lắng nghe...'
+                                          : 'Nhập tin nhắn...',
+                                  hintStyle: TextStyle(color: textMuted),
+                                  border: InputBorder.none,
+                                ),
+                                onSubmitted: (_) => _onSend(state),
+                              ),
                             ),
                           ),
                         ),
                         const SizedBox(width: 8),
-                        
-                        // Send message button
-                        IconButton(
-                          icon: Icon(LucideIcons.send, color: accentColor),
-                          onPressed: state.isSending ? null : _onSend,
-                        ),
+
+                        // Send button — shows loading spinner while streaming
+                        state.isSending
+                            ? Padding(
+                                padding: const EdgeInsets.all(12.0),
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.0,
+                                    valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                                  ),
+                                ),
+                              )
+                            : IconButton(
+                                icon: Icon(LucideIcons.send, color: accentColor),
+                                onPressed: () => _onSend(state),
+                              ),
                       ],
                     );
                   },
@@ -330,76 +364,193 @@ class _ChatScreenState extends State<ChatScreen> {
   }) {
     final isUser = message.senderType == SenderType.user;
 
+    // User bubble: warm bronze/dark-teal to match web (distinct from assistant)
+    final userBubbleColor = const Color(0xFF72383D); // same as lightAccent / web's --accent-bronze
+    final userTextColor = Colors.white;
+    // Assistant bubble: subtle elevated surface with border
+    final assistantBubbleColor = surfaceColor;
+
+    if (isUser) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                decoration: BoxDecoration(
+                  color: userBubbleColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(18),
+                    topRight: Radius.circular(18),
+                    bottomLeft: Radius.circular(18),
+                    bottomRight: Radius.circular(4),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: userBubbleColor.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  message.content,
+                  style: TextStyle(
+                    color: userTextColor,
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Assistant message: split by '---' into multiple bubbles (same as web)
+    final parts = _splitAssistantContent(message.content);
+    final displayParts = parts.isNotEmpty ? parts : [message.content];
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Row(
-        mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!isUser && widget.characterImageUrl != null) ...[
-            CircleAvatar(
-              backgroundImage: NetworkImage(widget.characterImageUrl!),
-              radius: 14,
-            ),
-            const SizedBox(width: 8),
-          ],
-          
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-              decoration: BoxDecoration(
-                color: isUser ? accentColor : surfaceColor,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft: isUser ? const Radius.circular(16) : Radius.zero,
-                  bottomRight: isUser ? Radius.zero : const Radius.circular(16),
-                ),
+          if (widget.characterImageUrl != null && widget.characterImageUrl!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 2.0, right: 8.0),
+              child: CircleAvatar(
+                backgroundImage: NetworkImage(widget.characterImageUrl!),
+                radius: 15,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    message.content,
+            )
+          else
+            const SizedBox(width: 8),
+
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Character name label
+                Padding(
+                  padding: const EdgeInsets.only(left: 4.0, bottom: 4.0),
+                  child: Text(
+                    widget.characterName.toUpperCase(),
                     style: TextStyle(
-                      color: isUser ? Colors.white : null,
-                      fontSize: 14,
-                      height: 1.4,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: accentColor,
+                      letterSpacing: 0.8,
                     ),
                   ),
-                  if (!isUser && message.content.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    // TTS Reader action button
-                    GestureDetector(
-                      onTap: () {
-                        if (isSpeaking) {
-                          _chatBloc.add(StopVoiceRequested());
-                        } else {
-                          _chatBloc.add(PlayVoiceRequested(
-                            messageId: message.id,
-                            content: message.content,
-                          ));
-                        }
-                      },
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
+                ),
+                // One bubble per split part
+                ...displayParts.asMap().entries.map((entry) {
+                  final partIndex = entry.key;
+                  final part = entry.value;
+                  final isLastPart = partIndex == displayParts.length - 1;
+
+                  // Last part (or only part if not split): the question-back gets
+                  // a slightly different style to signal it's a Socratic prompt
+                  final isSocraticPart = displayParts.length > 1 && isLastPart;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 6.0),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 10.0),
+                      decoration: BoxDecoration(
+                        color: isSocraticPart
+                            ? accentColor.withOpacity(0.12)
+                            : assistantBubbleColor,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(4),
+                          topRight: Radius.circular(18),
+                          bottomLeft: Radius.circular(18),
+                          bottomRight: Radius.circular(18),
+                        ),
+                        border: Border.all(
+                          color: isSocraticPart
+                              ? accentColor.withOpacity(0.4)
+                              : accentColor.withOpacity(0.15),
+                          width: 1,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            isSpeaking ? Icons.pause : LucideIcons.volume2,
-                            size: 14,
-                            color: accentColor,
-                          ),
-                          const SizedBox(width: 4),
+                          if (isSocraticPart)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 4.0),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.help_outline_rounded,
+                                      size: 11, color: accentColor),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Câu hỏi gợi mở',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: accentColor,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           Text(
-                            isSpeaking ? 'Đang đọc...' : 'Nghe đọc',
-                            style: TextStyle(fontSize: 10, color: accentColor, fontWeight: FontWeight.bold),
+                            part,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              height: 1.5,
+                            ),
                           ),
+                          // TTS button only on the last part
+                          if (isLastPart && message.content.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            GestureDetector(
+                              onTap: () {
+                                if (isSpeaking) {
+                                  _chatBloc.add(StopVoiceRequested());
+                                } else {
+                                  _chatBloc.add(PlayVoiceRequested(
+                                    messageId: message.id,
+                                    content: message.content,
+                                  ));
+                                }
+                              },
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    isSpeaking ? Icons.pause : LucideIcons.volume2,
+                                    size: 13,
+                                    color: accentColor,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    isSpeaking ? 'Đang đọc...' : 'Nghe đọc',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: accentColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
-                  ]
-                ],
-              ),
+                  );
+                }),
+              ],
             ),
           ),
         ],

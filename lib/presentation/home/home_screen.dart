@@ -55,8 +55,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final futures = await Future.wait([
-        _charRepository.getCharacters(),
-        _ctxRepository.getContexts(),
+        _charRepository.getCharacters().catchError((_) => <Character>[]),
+        _ctxRepository.getContexts().catchError((_) => <HistoricalContext>[]),
         _chatRepository.getHistory().catchError((_) => <ChatHistoryGroup>[]),
         _quizRepository.getHistory(page: 0, size: 3).catchError((_) => <MyResult>[]),
       ]);
