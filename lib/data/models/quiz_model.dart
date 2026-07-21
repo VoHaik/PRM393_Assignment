@@ -143,12 +143,19 @@ class QuizSessionModel extends QuizSession {
   });
 
   factory QuizSessionModel.fromJson(Map<String, dynamic> json) {
+    final rawLimitedTime = json['limitedTime'] as int? ?? 0;
+    final rawDuration = json['durationSeconds'] as int? ?? 0;
+    // Fallback default: 15 minutes (900 seconds) if not provided by BE
+    final effectiveTime = (rawLimitedTime > 0)
+        ? rawLimitedTime
+        : (rawDuration > 0 ? rawDuration : 900);
+
     return QuizSessionModel(
       sessionId: json['sessionId'] as String? ?? '',
       quizId: json['quizId'] as String? ?? '',
       title: json['title'] as String? ?? '',
-      limitedTime: json['limitedTime'] as int? ?? 0,
-      durationSeconds: json['durationSeconds'] as int? ?? 0,
+      limitedTime: effectiveTime,
+      durationSeconds: effectiveTime,
       questions: json['questions'] != null
           ? (json['questions'] as List)
               .map((q) => QuizQuestionModel.fromJson(q as Map<String, dynamic>))
@@ -171,13 +178,22 @@ class QuizResultModel extends QuizResult {
   });
 
   factory QuizResultModel.fromJson(Map<String, dynamic> json) {
+    DateTime parseDate(dynamic raw) {
+      if (raw == null) return DateTime.now();
+      try {
+        return DateTime.parse(raw.toString());
+      } catch (_) {
+        return DateTime.now();
+      }
+    }
+
     return QuizResultModel(
       resultId: json['resultId'] as String? ?? json['id'] as String? ?? '',
       score: (json['score'] as num?)?.toDouble() ?? 0.0,
       totalQuestions: json['totalQuestions'] as int? ?? 0,
       percentage: (json['percentage'] as num?)?.toDouble() ?? 0.0,
-      startTime: DateTime.parse(json['startTime'] as String),
-      endTime: DateTime.parse(json['endTime'] as String),
+      startTime: parseDate(json['startTime']),
+      endTime: parseDate(json['endTime']),
       correctAnswers: List<int>.from(json['correctAnswers'] ?? []),
       wrongAnswers: List<int>.from(json['wrongAnswers'] ?? []),
     );
@@ -196,6 +212,15 @@ class MyResultModel extends MyResult {
   });
 
   factory MyResultModel.fromJson(Map<String, dynamic> json) {
+    DateTime parseCompletedAt(dynamic raw) {
+      if (raw == null) return DateTime.now();
+      try {
+        return DateTime.parse(raw.toString());
+      } catch (_) {
+        return DateTime.now();
+      }
+    }
+
     return MyResultModel(
       sessionId: json['sessionId'] as String? ?? '',
       quizId: json['quizId'] as String? ?? '',
@@ -203,7 +228,7 @@ class MyResultModel extends MyResult {
       score: (json['score'] as num?)?.toDouble() ?? 0.0,
       totalQuestions: json['totalQuestions'] as int? ?? 0,
       percentage: (json['percentage'] as num?)?.toDouble() ?? 0.0,
-      completedAt: DateTime.parse(json['completedAt'] ?? json['completedTime'] as String),
+      completedAt: parseCompletedAt(json['completedAt'] ?? json['completedTime']),
     );
   }
 }
@@ -249,6 +274,15 @@ class QuizResultDetailModel extends QuizResultDetail {
   });
 
   factory QuizResultDetailModel.fromJson(Map<String, dynamic> json) {
+    DateTime parseDate(dynamic raw) {
+      if (raw == null) return DateTime.now();
+      try {
+        return DateTime.parse(raw.toString());
+      } catch (_) {
+        return DateTime.now();
+      }
+    }
+
     return QuizResultDetailModel(
       sessionId: json['sessionId'] as String? ?? '',
       quizId: json['quizId'] as String? ?? '',
@@ -257,8 +291,8 @@ class QuizResultDetailModel extends QuizResultDetail {
       totalQuestions: json['totalQuestions'] as int? ?? 0,
       percentage: (json['percentage'] as num?)?.toDouble() ?? 0.0,
       limitedTime: json['limitedTime'] as int? ?? 0,
-      startedAt: DateTime.parse(json['startedAt'] as String),
-      completedAt: DateTime.parse(json['completedAt'] as String),
+      startedAt: parseDate(json['startedAt'] ?? json['startTime']),
+      completedAt: parseDate(json['completedAt'] ?? json['endTime']),
       questions: json['questions'] != null
           ? (json['questions'] as List)
               .map((q) => QuizResultDetailQuestionModel.fromJson(q as Map<String, dynamic>))

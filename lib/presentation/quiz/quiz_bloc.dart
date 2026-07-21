@@ -212,6 +212,9 @@ class QuizBloc extends Bloc<QuizEvent, QuizState> {
         elapsedSeconds: 0,
         isSubmitting: false,
       ));
+
+      // Refresh quiz history automatically after submission
+      add(FetchHistoryRequested());
     } catch (e) {
       emit(state.copyWith(error: e.toString(), isSubmitting: false));
     }
