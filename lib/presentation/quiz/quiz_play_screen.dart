@@ -16,6 +16,17 @@ class QuizPlayScreen extends StatefulWidget {
 
 class _QuizPlayScreenState extends State<QuizPlayScreen> {
   int _currentQuestionIndex = 0;
+  bool _handledEmptySessionExit = false;
+
+  void _handleEmptySessionExit() {
+    if (_handledEmptySessionExit) {
+      return;
+    }
+
+    _handledEmptySessionExit = true;
+    context.read<QuizBloc>().add(ClearQuizStateRequested());
+    Navigator.pop(context);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +58,53 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         }
       },
       builder: (context, state) {
+        if (questions.isEmpty) {
+          return PopScope(
+            canPop: false,
+            onPopInvokedWithResult: (didPop, result) {
+              if (didPop) {
+                return;
+              }
+
+              _handleEmptySessionExit();
+            },
+            child: Scaffold(
+              appBar: AppBar(
+                title: Text(
+                  widget.session.title,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                leading: IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: _handleEmptySessionExit,
+                ),
+              ),
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Bài trắc nghiệm này chưa có câu hỏi. Vui lòng thử lại sau.',
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      OutlinedButton.icon(
+                        onPressed: _handleEmptySessionExit,
+                        icon: const Icon(Icons.close),
+                        label: const Text('Tho�t'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
         final currentQuestion = questions[_currentQuestionIndex];
         final selectedAnswer = state.userAnswers[currentQuestion.questionId];
 

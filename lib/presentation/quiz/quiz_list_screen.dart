@@ -76,6 +76,11 @@ class _QuizListScreenState extends State<QuizListScreen> with SingleTickerProvid
 
   Widget _buildQuizzesTab(Color accentColor, Color surfaceColor, Color borderColor, Color textMuted) {
     return BlocConsumer<QuizBloc, QuizState>(
+      listenWhen: (previous, current) {
+        final previousSessionId = previous.activeSession?.sessionId;
+        final currentSessionId = current.activeSession?.sessionId;
+        return currentSessionId != null && currentSessionId != previousSessionId;
+      },
       listener: (context, state) {
         if (state.activeSession != null) {
           // If a quiz session is successfully started, open QuizPlayScreen
