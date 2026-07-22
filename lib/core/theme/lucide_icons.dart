@@ -33,4 +33,14 @@ class LucideIcons {
   static const IconData chevronDown = Icons.keyboard_arrow_down;
   static const IconData logOut = Icons.logout;
   static const IconData trophy = Icons.emoji_events;
+  static const IconData film = Icons.movie_outlined;
+  static const IconData chevronLeft = Icons.chevron_left;
+  static const IconData arrowRight = Icons.arrow_forward;
+  static const IconData pause = Icons.pause;
+  static const IconData play = Icons.play_arrow;
+  static const IconData externalLink = Icons.open_in_new;
+  static const IconData layoutGrid = Icons.grid_view;
+  static const IconData searchX = Icons.search_off;
+  static const IconData alertCircle = Icons.error_outline;
+  static const IconData maximize2 = Icons.fullscreen;
 }

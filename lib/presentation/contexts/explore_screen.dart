@@ -7,9 +7,9 @@ import '../../domain/entities/historical_context.dart';
 import '../../domain/repositories/historical_context_repository.dart';
 import '../../injection_container.dart';
 import '../widgets/context_card.dart';
+import '../widgets/context_timeline_widget.dart';
 import '../../core/theme/app_theme.dart';
 import '../historical_context/historical_context_detail_screen.dart';
-
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
@@ -28,7 +28,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   String _searchQuery = '';
   CharacterEra? _selectedEra; // null means 'ALL'
+  ContextCategory? _selectedCategory;
+  bool _onlyVideo = false;
+  bool _isTimelineView = false;
   Timer? _debounce;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -39,6 +43,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   @override
   void dispose() {
     _debounce?.cancel();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -64,9 +69,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 400), () {
+    _debounce = Timer(const Duration(milliseconds: 300), () {
       setState(() {
-        _searchQuery = query.toLowerCase();
+        _searchQuery = query.trim().toLowerCase();
         _applyFilters();
       });
     });
@@ -79,12 +84,32 @@ class _ExploreScreenState extends State<ExploreScreen> {
     });
   }
 
+  void _onCategoryChanged(ContextCategory? cat) {
+    setState(() {
+      _selectedCategory = cat;
+      _applyFilters();
+    });
+  }
+
+  void _toggleOnlyVideo() {
+    setState(() {
+      _onlyVideo = !_onlyVideo;
+      _applyFilters();
+    });
+  }
+
   void _applyFilters() {
     _filteredContexts = _allContexts.where((ctx) {
-      final matchesSearch = ctx.name.toLowerCase().contains(_searchQuery) ||
-          (ctx.description?.toLowerCase().contains(_searchQuery) ?? false);
+      final matchesSearch = _searchQuery.isEmpty ||
+          ctx.name.toLowerCase().contains(_searchQuery) ||
+          (ctx.description?.toLowerCase().contains(_searchQuery) ?? false) ||
+          (ctx.location?.toLowerCase().contains(_searchQuery) ?? false);
+
       final matchesEra = _selectedEra == null || ctx.era == _selectedEra;
-      return matchesSearch && matchesEra;
+      final matchesCategory = _selectedCategory == null || ctx.category == _selectedCategory;
+      final matchesVideo = !_onlyVideo || (ctx.videoUrl != null && ctx.videoUrl!.trim().isNotEmpty);
+
+      return matchesSearch && matchesEra && matchesCategory && matchesVideo;
     }).toList();
   }
 
@@ -104,6 +129,20 @@ class _ExploreScreenState extends State<ExploreScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: theme.textTheme.bodyLarge?.color,
+        actions: [
+          IconButton(
+            tooltip: _isTimelineView ? 'Xem dạng Lưới' : 'Xem Trục thời gian',
+            icon: Icon(
+              _isTimelineView ? LucideIcons.layoutGrid : LucideIcons.clock,
+              color: accentColor,
+            ),
+            onPressed: () {
+              setState(() {
+                _isTimelineView = !_isTimelineView;
+              });
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: RefreshIndicator(
@@ -112,9 +151,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Search Input
+              // Search Input Box
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
                 child: Container(
                   height: 48,
                   decoration: BoxDecoration(
@@ -130,28 +169,58 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       ),
                       Expanded(
                         child: TextField(
+                          controller: _searchController,
                           onChanged: _onSearchChanged,
                           decoration: InputDecoration(
-                            hintText: 'Tìm kiếm bối cảnh lịch sử...',
-                            hintStyle: TextStyle(color: textMuted),
+                            hintText: 'Tìm bối cảnh, sự kiện, địa danh...',
+                            hintStyle: TextStyle(color: textMuted, fontSize: 14),
                             border: InputBorder.none,
                           ),
-                          style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                          style: TextStyle(color: theme.textTheme.bodyLarge?.color, fontSize: 14),
                         ),
                       ),
+                      if (_searchController.text.isNotEmpty)
+                        IconButton(
+                          icon: const Icon(LucideIcons.x, size: 16, color: Colors.grey),
+                          onPressed: () {
+                            _searchController.clear();
+                            _onSearchChanged('');
+                          },
+                        ),
                     ],
                   ),
                 ),
               ),
 
-              // Era Filter Horizontal list
+              // Horizontal Filters (Era & Video & Category)
               SizedBox(
-                height: 40,
+                height: 42,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   children: [
-                    _buildEraTab('Tất cả', null, accentColor, surfaceColor, borderColor),
+                    // Video Quick Filter Chip
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: FilterChip(
+                        avatar: Icon(
+                          LucideIcons.film,
+                          size: 14,
+                          color: _onlyVideo ? Colors.black : Colors.amber,
+                        ),
+                        label: const Text('Có Video', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        selected: _onlyVideo,
+                        onSelected: (_) => _toggleOnlyVideo(),
+                        selectedColor: Colors.amber,
+                        backgroundColor: surfaceColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          side: BorderSide(color: _onlyVideo ? Colors.amber : borderColor),
+                        ),
+                        showCheckmark: false,
+                      ),
+                    ),
+                    _buildEraTab('Tất cả thời kỳ', null, accentColor, surfaceColor, borderColor),
                     _buildEraTab('Cổ đại', CharacterEra.ancient, accentColor, surfaceColor, borderColor),
                     _buildEraTab('Trung đại', CharacterEra.medieval, accentColor, surfaceColor, borderColor),
                     _buildEraTab('Cận đại', CharacterEra.modern, accentColor, surfaceColor, borderColor),
@@ -159,11 +228,31 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
 
-              // Grid Content
+              // Results count header
+              if (!_isLoading && !_isError)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 2.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Tìm thấy ${_filteredContexts.length} bối cảnh',
+                        style: TextStyle(fontSize: 12, color: textMuted, fontWeight: FontWeight.w500),
+                      ),
+                      Text(
+                        _isTimelineView ? 'Chế độ Trục thời gian' : 'Chế độ Lưới',
+                        style: TextStyle(fontSize: 12, color: accentColor, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 6),
+
+              // Content View (Grid vs Timeline)
               Expanded(
-                child: _buildGridContent(),
+                child: _buildContent(),
               ),
             ],
           ),
@@ -213,19 +302,56 @@ class _ExploreScreenState extends State<ExploreScreen> {
     );
   }
 
-  Widget _buildGridContent() {
+  Widget _buildContent() {
     if (_isLoading) {
       return _buildSkeletonLoader();
     }
     if (_isError) {
-      return const Center(
-        child: Text('Không thể tải dữ liệu. Vui lòng thử lại.'),
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(LucideIcons.alertCircle, size: 40, color: Colors.redAccent),
+            const SizedBox(height: 12),
+            const Text('Không thể tải dữ liệu bối cảnh lịch sử.'),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: _loadData,
+              child: const Text('Thử lại'),
+            ),
+          ],
+        ),
       );
     }
     if (_filteredContexts.isEmpty) {
-      return const Center(
-        child: Text('Không tìm thấy bối cảnh lịch sử nào.'),
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(LucideIcons.searchX, size: 48, color: Colors.grey),
+            const SizedBox(height: 12),
+            const Text('Không tìm thấy bối cảnh lịch sử phù hợp.'),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () {
+                _searchController.clear();
+                setState(() {
+                  _searchQuery = '';
+                  _selectedEra = null;
+                  _selectedCategory = null;
+                  _onlyVideo = false;
+                  _applyFilters();
+                });
+              },
+              child: const Text('Xóa bộ lọc tìm kiếm'),
+            ),
+          ],
+        ),
       );
+    }
+
+    if (_isTimelineView) {
+      return ContextTimelineWidget(contexts: _filteredContexts);
     }
 
     return GridView.builder(
@@ -234,7 +360,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 0.73, // Adjusted to prevent layout overflow on text
+        childAspectRatio: 0.73,
       ),
       itemCount: _filteredContexts.length,
       itemBuilder: (context, index) {
