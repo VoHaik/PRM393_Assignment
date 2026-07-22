@@ -237,15 +237,49 @@ class _FullCard extends StatelessWidget {
             // Thumbnail
             AspectRatio(
               aspectRatio: 4 / 3,
-              child: Container(
-                color: et.cardBg,
-                child: imageUri != null && imageUri.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: imageUri,
-                        fit: BoxFit.cover,
-                        errorWidget: (_, __, ___) => _FallbackInitial(initial: ctx.name[0], color: et.glow, fontSize: 36),
-                      )
-                    : _FallbackInitial(initial: ctx.name[0], color: et.glow, fontSize: 36),
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Container(
+                      color: et.cardBg,
+                      child: imageUri != null && imageUri.isNotEmpty
+                          ? CachedNetworkImage(
+                              imageUrl: imageUri,
+                              fit: BoxFit.cover,
+                              errorWidget: (_, __, ___) => _FallbackInitial(initial: ctx.name[0], color: et.glow, fontSize: 36),
+                            )
+                          : _FallbackInitial(initial: ctx.name[0], color: et.glow, fontSize: 36),
+                    ),
+                  ),
+                  if (ctx.videoUrl != null && ctx.videoUrl!.trim().isNotEmpty)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.75),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.amber.withOpacity(0.5), width: 1),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(LucideIcons.film, size: 10, color: Colors.amber),
+                            SizedBox(width: 3),
+                            Text(
+                              'Video',
+                              style: TextStyle(
+                                color: Colors.amber,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
 

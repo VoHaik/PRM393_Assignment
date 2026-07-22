@@ -7,6 +7,8 @@ import '../../injection_container.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/lucide_icons.dart';
 import '../widgets/context_card.dart';
+import '../widgets/in_app_video_player.dart';
+import '../characters/character_detail_screen.dart';
 
 class HistoricalContextDetailScreen extends StatefulWidget {
   /// Pass either [contextId] to load from API, or [context] if already loaded.
@@ -33,6 +35,7 @@ class _HistoricalContextDetailScreenState
   HistoricalContext? _ctx;
   bool _isLoading = true;
   String? _error;
+  bool _showInlineVideo = false;
 
   @override
   void initState() {
@@ -60,11 +63,22 @@ class _HistoricalContextDetailScreenState
     }
   }
 
-  Future<void> _openVideo(String url) async {
-    final uri = Uri.parse(url);
+  Future<void> _openExternalVideo(String url) async {
+    final uri = Uri.parse(url.trim());
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+  }
+
+  void _playVideoFullscreen(String url, String title) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => FullscreenVideoModal(
+          videoUrl: url,
+          title: title,
+        ),
+      ),
+    );
   }
 
   @override
@@ -108,6 +122,7 @@ class _HistoricalContextDetailScreenState
     final ctx = _ctx!;
     final et = eraThemes[ctx.era] ?? eraThemes[eraThemes.keys.first]!;
     final yearTxt = formatContextYear(ctx);
+    final hasVideo = ctx.videoUrl != null && ctx.videoUrl!.trim().isNotEmpty;
 
     return Scaffold(
       body: CustomScrollView(
@@ -123,11 +138,11 @@ class _HistoricalContextDetailScreenState
               child: Container(
                 margin: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.black45,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(LucideIcons.arrowLeft,
-                    color: Color(0xFF1C1917), size: 20),
+                    color: Colors.white, size: 20),
               ),
             ),
             flexibleSpace: FlexibleSpaceBar(
@@ -165,14 +180,14 @@ class _HistoricalContextDetailScreenState
             ),
           ),
 
-          // ── Content ────────────────────────────────────────────────────────
+          // ── Main Content Body ─────────────────────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Era + Category badges
+                  // Era + Category Badges
                   Row(
                     children: [
                       Container(
@@ -255,6 +270,12 @@ class _HistoricalContextDetailScreenState
 
                   const SizedBox(height: 20),
 
+                  // In-App Video Player Section
+                  if (hasVideo) ...[
+                    _buildVideoSection(ctx, accentColor),
+                    const SizedBox(height: 24),
+                  ],
+
                   // Description
                   if (ctx.description != null &&
                       ctx.description!.isNotEmpty) ...[
@@ -265,32 +286,21 @@ class _HistoricalContextDetailScreenState
                     const SizedBox(height: 24),
                   ],
 
-                  // Video button
-                  if (ctx.videoUrl != null && ctx.videoUrl!.isNotEmpty) ...[
-                    OutlinedButton.icon(
-                      onPressed: () => _openVideo(ctx.videoUrl!),
-                      icon: const Icon(Icons.play_circle_outline, size: 16),
-                      label: const Text('Xem video tư liệu'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: accentColor,
-                        side: BorderSide(color: accentColor),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        minimumSize: const Size(double.infinity, 48),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
+                  // Related Characters Section
+                  if (ctx.characterIds.isNotEmpty) ...[
+                    Divider(color: borderColor),
+                    const SizedBox(height: 12),
+                    _buildRelatedCharactersSection(ctx, textMuted),
+                    const SizedBox(height: 16),
                   ],
 
-                  // Divider
-                  Divider(color: borderColor),
-                  const SizedBox(height: 8),
-
-                  // Period / extra info chips
+                  // Extra Info
                   if (ctx.period != null && ctx.period!.isNotEmpty) ...[
+                    Divider(color: borderColor),
+                    const SizedBox(height: 12),
                     _InfoRow(
                         icon: LucideIcons.clock,
-                        label: 'Giai đoạn',
+                        label: 'Giai đoạn lịch sử',
                         value: ctx.period!,
                         textMuted: textMuted),
                     const SizedBox(height: 10),
@@ -301,6 +311,200 @@ class _HistoricalContextDetailScreenState
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildVideoSection(HistoricalContext ctx, Color accentColor) {
+    final videoUrl = ctx.videoUrl!.trim();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Row(
+          children: [
+            Icon(LucideIcons.film, size: 18, color: Colors.amber),
+            SizedBox(width: 8),
+            Text(
+              'Video Tư liệu Lịch sử',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (_showInlineVideo) ...[
+          InAppVideoPlayer(
+            videoUrl: videoUrl,
+            title: ctx.name,
+            autoPlay: true,
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _showInlineVideo = false;
+                  });
+                },
+                icon: const Icon(LucideIcons.chevronUp, size: 16),
+                label: const Text('Thu gọn Player'),
+              ),
+              IconButton(
+                tooltip: _showInlineVideo ? 'Xem Toàn màn hình' : 'Bật Video',
+                icon: const Icon(LucideIcons.maximize2, size: 18, color: Colors.amber),
+                onPressed: () => _playVideoFullscreen(videoUrl, ctx.name),
+              ),
+            ],
+          ),
+        ] else ...[
+          // Replay Video Banner Card
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E1E2E),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.amber.withOpacity(0.3)),
+            ),
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _showInlineVideo = true;
+                    });
+                  },
+                  child: Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: Colors.amber,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.amber.withOpacity(0.4),
+                          blurRadius: 8,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.play_arrow_rounded, size: 32, color: Colors.black),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Phát Video tư liệu',
+                        style: TextStyle(
+                          color: Colors.amber,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        ctx.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  tooltip: 'Xem Fullscreen',
+                  icon: const Icon(LucideIcons.externalLink, size: 18, color: Colors.white70),
+                  onPressed: () => _openExternalVideo(videoUrl),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildRelatedCharactersSection(HistoricalContext ctx, Color textMuted) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Nhân vật liên quan',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              '${ctx.characterIds.length} nhân vật',
+              style: TextStyle(fontSize: 12, color: textMuted),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 100,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: ctx.characterIds.length,
+            itemBuilder: (context, index) {
+              final char = ctx.characterIds[index];
+              final img = char.imageUrl ?? char.image;
+
+              return Padding(
+                padding: const EdgeInsets.only(right: 14.0),
+                child: GestureDetector(
+                  onTap: () {
+                    if (char.id.isNotEmpty) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => CharacterDetailScreen(characterId: char.id),
+                        ),
+                      );
+                    }
+                  },
+                  child: Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor: AppColors.darkSurface,
+                        backgroundImage: (img != null && img.isNotEmpty)
+                            ? CachedNetworkImageProvider(img)
+                            : null,
+                        child: (img == null || img.isEmpty)
+                            ? Text(
+                                char.name.isNotEmpty ? char.name[0].toUpperCase() : '?',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                              )
+                            : null,
+                      ),
+                      const SizedBox(height: 6),
+                      SizedBox(
+                        width: 72,
+                        child: Text(
+                          char.name,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
