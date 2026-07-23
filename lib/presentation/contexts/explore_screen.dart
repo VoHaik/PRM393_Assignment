@@ -30,7 +30,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   CharacterEra? _selectedEra; // null means 'ALL'
   ContextCategory? _selectedCategory;
   bool _onlyVideo = false;
-  bool _isTimelineView = false;
+  bool _isTimelineView = true;
   Timer? _debounce;
   final TextEditingController _searchController = TextEditingController();
 
@@ -360,7 +360,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 0.73,
+        childAspectRatio: 0.64,
       ),
       itemCount: _filteredContexts.length,
       itemBuilder: (context, index) {

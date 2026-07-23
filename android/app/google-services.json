@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "169275089849",
+    "project_id": "history-tell",
+    "storage_bucket": "history-tell.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:169275089849:android:cc680c816488236ee10c68",
+        "android_client_info": {
+          "package_name": "com.historytalk.historytalk_flutter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBLJvITyvQwU235rHWm8Juv7SgbbZ-ZFNE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

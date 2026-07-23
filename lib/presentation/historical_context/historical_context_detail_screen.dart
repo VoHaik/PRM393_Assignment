@@ -63,24 +63,6 @@ class _HistoricalContextDetailScreenState
     }
   }
 
-  Future<void> _openExternalVideo(String url) async {
-    final uri = Uri.parse(url.trim());
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
-
-  void _playVideoFullscreen(String url, String title) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => FullscreenVideoModal(
-          videoUrl: url,
-          title: title,
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -331,35 +313,29 @@ class _HistoricalContextDetailScreenState
           ],
         ),
         const SizedBox(height: 12),
-        if (_showInlineVideo) ...[
-          InAppVideoPlayer(
-            videoUrl: videoUrl,
-            title: ctx.name,
-            autoPlay: true,
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              TextButton.icon(
-                onPressed: () {
-                  setState(() {
-                    _showInlineVideo = false;
-                  });
-                },
-                icon: const Icon(LucideIcons.chevronUp, size: 16),
-                label: const Text('Thu gọn Player'),
+        // Replay Video Card matching Mobile React VideoReplayCard 100%
+        InkWell(
+          onTap: () {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (_) => Container(
+                padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1E1E2E),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                child: InAppVideoPlayer(
+                  videoUrl: videoUrl,
+                  title: ctx.name,
+                  onClose: () => Navigator.pop(context),
+                ),
               ),
-              IconButton(
-                tooltip: _showInlineVideo ? 'Xem Toàn màn hình' : 'Bật Video',
-                icon: const Icon(LucideIcons.maximize2, size: 18, color: Colors.amber),
-                onPressed: () => _playVideoFullscreen(videoUrl, ctx.name),
-              ),
-            ],
-          ),
-        ] else ...[
-          // Replay Video Banner Card
-          Container(
+            );
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
             decoration: BoxDecoration(
               color: const Color(0xFF1E1E2E),
               borderRadius: BorderRadius.circular(16),
@@ -368,28 +344,21 @@ class _HistoricalContextDetailScreenState
             padding: const EdgeInsets.all(14),
             child: Row(
               children: [
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _showInlineVideo = true;
-                    });
-                  },
-                  child: Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: Colors.amber,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.amber.withOpacity(0.4),
-                          blurRadius: 8,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                    child: const Icon(Icons.play_arrow_rounded, size: 32, color: Colors.black),
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.amber,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.amber.withOpacity(0.4),
+                        blurRadius: 8,
+                        spreadRadius: 2,
+                      ),
+                    ],
                   ),
+                  child: const Icon(Icons.play_arrow_rounded, size: 30, color: Colors.black),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -397,37 +366,34 @@ class _HistoricalContextDetailScreenState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Phát Video tư liệu',
+                        'VIDEO BỐI CẢNH',
                         style: TextStyle(
                           color: Colors.amber,
-                          fontSize: 12,
+                          fontSize: 11,
                           fontWeight: FontWeight.bold,
+                          letterSpacing: 1.1,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        ctx.name,
+                        'Xem lại: ${ctx.name}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 8),
-                IconButton(
-                  tooltip: 'Xem Fullscreen',
-                  icon: const Icon(LucideIcons.externalLink, size: 18, color: Colors.white70),
-                  onPressed: () => _openExternalVideo(videoUrl),
-                ),
+                const Icon(LucideIcons.chevronRight, size: 18, color: Colors.white70),
               ],
             ),
           ),
-        ],
+        ),
       ],
     );
   }

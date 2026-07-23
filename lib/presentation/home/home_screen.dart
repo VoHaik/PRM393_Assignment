@@ -17,7 +17,10 @@ import '../../injection_container.dart';
 import '../../core/theme/app_theme.dart';
 import '../historical_context/historical_context_detail_screen.dart';
 import '../chat/chat_screen.dart';
+import '../chat/chat_history_screen.dart';
+import '../contexts/explore_screen.dart';
 import '../quiz/quiz_result_screen.dart';
+import '../quiz/quiz_list_screen.dart';
 // Note: For 'View all' actions, you might want to push to corresponding screens.
 
 class HomeScreen extends StatefulWidget {
@@ -202,7 +205,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               const SizedBox(height: 12),
                               GestureDetector(
-                                onTap: () {},
+                                onTap: () {
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (_) => const ExploreScreen(),
+                                  ));
+                                },
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                   decoration: BoxDecoration(
@@ -242,7 +249,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                           GestureDetector(
-                            onTap: () {},
+                            onTap: () {
+                              Navigator.of(context).push(MaterialPageRoute(
+                                builder: (_) => const ExploreScreen(),
+                              ));
+                            },
                             child: Row(
                               children: [
                                 Text('Xem tất cả', style: TextStyle(fontSize: 12, color: accentColor, fontWeight: FontWeight.bold)),
@@ -297,7 +308,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                             GestureDetector(
-                              onTap: () {},
+                              onTap: () {
+                                Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (_) => const ChatHistoryScreen(),
+                                ));
+                              },
                               child: Row(
                                 children: [
                                   Text('Xem tất cả', style: TextStyle(fontSize: 12, color: accentColor, fontWeight: FontWeight.bold)),
@@ -400,7 +415,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                           GestureDetector(
-                            onTap: () {},
+                            onTap: () {
+                              Navigator.of(context).push(MaterialPageRoute(
+                                builder: (_) => const ExploreScreen(),
+                              ));
+                            },
                             child: Row(
                               children: [
                                 Text('Xem tất cả', style: TextStyle(fontSize: 12, color: accentColor, fontWeight: FontWeight.bold)),
@@ -449,7 +468,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                             GestureDetector(
-                              onTap: () {},
+                              onTap: () {
+                                Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (_) => const QuizListScreen(),
+                                ));
+                              },
                               child: Row(
                                 children: [
                                   Text('Làm quiz mới', style: TextStyle(fontSize: 12, color: accentColor, fontWeight: FontWeight.bold)),

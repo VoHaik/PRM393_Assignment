@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:historytalk_flutter/core/theme/lucide_icons.dart';
 import 'quiz_bloc.dart';
 import 'quiz_play_screen.dart';
 import 'quiz_result_screen.dart';
@@ -18,6 +17,7 @@ class QuizListScreen extends StatefulWidget {
 class _QuizListScreenState extends State<QuizListScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late final QuizBloc _quizBloc;
+  QuizLevel? _selectedLevel; // null = ALL
 
   @override
   void initState() {
@@ -74,6 +74,36 @@ class _QuizListScreenState extends State<QuizListScreen> with SingleTickerProvid
     );
   }
 
+  Widget _buildLevelChip(String label, QuizLevel? level, Color activeColor, Color surfaceColor, Color borderColor) {
+    final isSelected = _selectedLevel == level;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8.0),
+      child: ChoiceChip(
+        label: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: isSelected ? Colors.white : Theme.of(context).textTheme.bodyMedium?.color,
+          ),
+        ),
+        selected: isSelected,
+        onSelected: (_) {
+          setState(() {
+            _selectedLevel = level;
+          });
+        },
+        selectedColor: activeColor,
+        backgroundColor: surfaceColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: isSelected ? activeColor : borderColor),
+        ),
+        showCheckmark: false,
+      ),
+    );
+  }
+
   Widget _buildQuizzesTab(Color accentColor, Color surfaceColor, Color borderColor, Color textMuted) {
     return BlocConsumer<QuizBloc, QuizState>(
       listenWhen: (previous, current) {
@@ -83,7 +113,6 @@ class _QuizListScreenState extends State<QuizListScreen> with SingleTickerProvid
       },
       listener: (context, state) {
         if (state.activeSession != null) {
-          // If a quiz session is successfully started, open QuizPlayScreen
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => BlocProvider.value(
@@ -99,104 +128,126 @@ class _QuizListScreenState extends State<QuizListScreen> with SingleTickerProvid
           return Center(child: CircularProgressIndicator(color: accentColor));
         }
 
-        if (state.quizzes.isEmpty) {
-          return const Center(child: Text('Không có bài trắc nghiệm nào.'));
-        }
+        final filteredQuizzes = _selectedLevel == null
+            ? state.quizzes
+            : state.quizzes.where((q) => q.level == _selectedLevel).toList();
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(16.0),
-          itemCount: state.quizzes.length,
-          itemBuilder: (context, index) {
-            final quiz = state.quizzes[index];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12.0),
-              child: Card(
-                color: surfaceColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: borderColor),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: quiz.level == QuizLevel.easy
-                                  ? Colors.green.shade50
-                                  : quiz.level == QuizLevel.medium
-                                      ? Colors.amber.shade50
-                                      : Colors.red.shade50,
-                              borderRadius: BorderRadius.circular(8),
+        return Column(
+          children: [
+            // Difficulty Filter Chips Bar
+            SizedBox(
+              height: 50,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                children: [
+                  _buildLevelChip('Tất cả', null, accentColor, surfaceColor, borderColor),
+                  _buildLevelChip('Dễ', QuizLevel.easy, Colors.green, surfaceColor, borderColor),
+                  _buildLevelChip('Trung bình', QuizLevel.medium, Colors.amber.shade800, surfaceColor, borderColor),
+                  _buildLevelChip('Khó', QuizLevel.hard, Colors.red, surfaceColor, borderColor),
+                ],
+              ),
+            ),
+            Expanded(
+              child: filteredQuizzes.isEmpty
+                  ? const Center(child: Text('Không có bài trắc nghiệm phù hợp.'))
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16.0),
+                      itemCount: filteredQuizzes.length,
+                      itemBuilder: (context, index) {
+                        final quiz = filteredQuizzes[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: Card(
+                            color: surfaceColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              side: BorderSide(color: borderColor),
                             ),
-                            child: Text(
-                              quiz.level == QuizLevel.easy
-                                  ? 'DỄ'
-                                  : quiz.level == QuizLevel.medium
-                                      ? 'TRUNG BÌNH'
-                                      : 'KHÓ',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: quiz.level == QuizLevel.easy
-                                    ? Colors.green
-                                    : quiz.level == QuizLevel.medium
-                                        ? Colors.amber.shade800
-                                        : Colors.red,
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: quiz.level == QuizLevel.easy
+                                              ? Colors.green.shade50
+                                              : quiz.level == QuizLevel.medium
+                                                  ? Colors.amber.shade50
+                                                  : Colors.red.shade50,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          quiz.level == QuizLevel.easy
+                                              ? 'DỄ'
+                                              : quiz.level == QuizLevel.medium
+                                                  ? 'TRUNG BÌNH'
+                                                  : 'KHÓ',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: quiz.level == QuizLevel.easy
+                                                ? Colors.green
+                                                : quiz.level == QuizLevel.medium
+                                                    ? Colors.amber.shade800
+                                                    : Colors.red,
+                                          ),
+                                        ),
+                                      ),
+                                      Text(
+                                        'Lượt chơi: ${quiz.playCount}',
+                                        style: TextStyle(fontSize: 12, color: textMuted),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    quiz.title,
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                  ),
+                                  if (quiz.chapterTitle != null) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Chương ${quiz.chapterNumber}: ${quiz.chapterTitle}',
+                                      style: TextStyle(fontSize: 13, color: textMuted),
+                                    ),
+                                  ],
+                                  if (quiz.description != null) ...[
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      quiz.description!,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(fontSize: 13, color: textMuted),
+                                    ),
+                                  ],
+                                  const SizedBox(height: 16),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      _quizBloc.add(StartQuizSessionRequested(quizId: quiz.quizId));
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: accentColor,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      minimumSize: const Size.fromHeight(44),
+                                    ),
+                                    child: const Text('Bắt đầu làm bài', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                          Text(
-                            'Lượt chơi: ${quiz.playCount}',
-                            style: TextStyle(fontSize: 12, color: textMuted),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        quiz.title,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                      if (quiz.chapterTitle != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          'Chương ${quiz.chapterNumber}: ${quiz.chapterTitle}',
-                          style: TextStyle(fontSize: 13, color: textMuted),
-                        ),
-                      ],
-                      if (quiz.description != null) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          quiz.description!,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 13, color: textMuted),
-                        ),
-                      ],
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () {
-                          _quizBloc.add(StartQuizSessionRequested(quizId: quiz.quizId));
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: accentColor,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          minimumSize: const Size.fromHeight(44),
-                        ),
-                        child: const Text('Bắt đầu làm bài', style: TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
+                        );
+                      },
+                    ),
+            ),
+          ],
         );
       },
     );
@@ -210,7 +261,7 @@ class _QuizListScreenState extends State<QuizListScreen> with SingleTickerProvid
         }
 
         if (state.history.isEmpty) {
-          return const Center(child: Text('Chưa có lịch sử làm bài nào.'));
+          return const Center(child: Text('Chưa có lịch sử làm bài.'));
         }
 
         return ListView.builder(
@@ -219,27 +270,15 @@ class _QuizListScreenState extends State<QuizListScreen> with SingleTickerProvid
           itemBuilder: (context, index) {
             final item = state.history[index];
             return Padding(
-              padding: const EdgeInsets.only(bottom: 10.0),
-              child: InkWell(
-                onTap: () {
-                  // Navigate to QuizResultScreen directly with sessionId
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => BlocProvider.value(
-                        value: _quizBloc,
-                        child: QuizResultScreen(sessionId: item.sessionId),
-                      ),
-                    ),
-                  );
-                },
-                borderRadius: BorderRadius.circular(14),
-                child: Container(
-                  padding: const EdgeInsets.all(14.0),
-                  decoration: BoxDecoration(
-                    color: surfaceColor,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: borderColor),
-                  ),
+              padding: const EdgeInsets.only(bottom: 12.0),
+              child: Card(
+                color: surfaceColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: borderColor),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
                   child: Row(
                     children: [
                       Expanded(

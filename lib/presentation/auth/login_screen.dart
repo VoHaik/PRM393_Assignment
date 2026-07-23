@@ -4,6 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:historytalk_flutter/core/theme/lucide_icons.dart';
 import 'auth_bloc.dart';
 import 'register_screen.dart';
+import 'forgot_password_screen.dart';
 import '../main_tabs_screen.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/constants/env_config.dart';
@@ -261,7 +262,26 @@ class _LoginScreenState extends State<LoginScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                            );
+                          },
+                          child: Text(
+                            'Quên mật khẩu?',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: accentColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
 
                       // Submit Button
                       ElevatedButton(

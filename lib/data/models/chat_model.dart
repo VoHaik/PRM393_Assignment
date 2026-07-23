@@ -21,13 +21,11 @@ String serializeChatMessageType(ChatMessageType type) {
 }
 
 SenderType parseSenderType(String? senderStr) {
-  switch (senderStr?.toUpperCase()) {
-    case 'ASSISTANT':
-      return SenderType.assistant;
-    case 'USER':
-    default:
-      return SenderType.user;
+  final str = senderStr?.trim().toUpperCase();
+  if (str == 'ASSISTANT' || str == 'CHARACTER' || str == 'BOT' || str == 'AI' || str == 'SYSTEM') {
+    return SenderType.assistant;
   }
+  return SenderType.user;
 }
 
 String serializeSenderType(SenderType sender) {
@@ -53,10 +51,15 @@ class ChatMessageModel extends ChatMessage {
   });
 
   factory ChatMessageModel.fromJson(Map<String, dynamic> json) {
+    final rawSender = json['senderType'] as String? ??
+        json['sender_type'] as String? ??
+        json['sender'] as String? ??
+        json['role'] as String?;
+
     return ChatMessageModel(
       id: json['id'] as String? ?? json['_id'] as String? ?? '',
-      sessionId: json['sessionId'] as String? ?? '',
-      senderType: parseSenderType(json['senderType'] as String?),
+      sessionId: json['sessionId'] as String? ?? json['session_id'] as String? ?? '',
+      senderType: parseSenderType(rawSender),
       content: json['content'] as String? ?? '',
       messageType: parseChatMessageType(json['messageType'] as String?),
       tokensUsed: json['tokensUsed'] as int?,

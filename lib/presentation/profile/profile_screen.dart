@@ -1,3 +1,4 @@
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -406,6 +407,68 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 16),
 
+                    // Theme Selector Section
+                    Container(
+                      padding: const EdgeInsets.all(18.0),
+                      decoration: BoxDecoration(
+                        color: surfaceColor,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: borderColor),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(isDark ? Icons.dark_mode : Icons.light_mode, color: accentColor, size: 18),
+                              const SizedBox(width: 8),
+                              const Text('Giao diện (Theme)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          ValueListenableBuilder<ThemeMode>(
+                            valueListenable: themeNotifier,
+                            builder: (context, mode, _) {
+                              return Row(
+                                children: [
+                                  Expanded(
+                                    child: ChoiceChip(
+                                      label: const Center(child: Text('Sáng', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
+                                      selected: mode == ThemeMode.light,
+                                      onSelected: (_) => themeNotifier.value = ThemeMode.light,
+                                      selectedColor: accentColor,
+                                      labelStyle: TextStyle(color: mode == ThemeMode.light ? Colors.white : textMuted),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: ChoiceChip(
+                                      label: const Center(child: Text('Tối', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
+                                      selected: mode == ThemeMode.dark,
+                                      onSelected: (_) => themeNotifier.value = ThemeMode.dark,
+                                      selectedColor: accentColor,
+                                      labelStyle: TextStyle(color: mode == ThemeMode.dark ? Colors.white : textMuted),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: ChoiceChip(
+                                      label: const Center(child: Text('Hệ thống', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
+                                      selected: mode == ThemeMode.system,
+                                      onSelected: (_) => themeNotifier.value = ThemeMode.system,
+                                      selectedColor: accentColor,
+                                      labelStyle: TextStyle(color: mode == ThemeMode.system ? Colors.white : textMuted),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
                     // Change Password Section
                     Container(
                       padding: const EdgeInsets.all(18.0),
@@ -497,6 +560,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           SizedBox(width: 8),
                           Text('Đăng xuất', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                         ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Test Crashlytics Button
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        // Force a test crash to report to Firebase Console
+                        FirebaseCrashlytics.instance.crash();
+                      },
+                      icon: const Icon(Icons.bug_report_rounded, color: Colors.orange, size: 18),
+                      label: const Text('Thử nghiệm Firebase Crashlytics (Crash App)', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 13)),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.orange),
+                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                     ),
                   ],

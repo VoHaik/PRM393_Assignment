@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:historytalk_flutter/core/theme/lucide_icons.dart';
@@ -27,6 +28,10 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   late final ChatBloc _chatBloc;
 
+  Timer? _callTimer;
+  int _callElapsed = 0;
+  bool _isCallActive = false;
+
   @override
   void initState() {
     super.initState();
@@ -36,9 +41,39 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    _callTimer?.cancel();
     _inputController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _startCall() {
+    setState(() {
+      _isCallActive = true;
+      _callElapsed = 0;
+    });
+    _callTimer?.cancel();
+    _callTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted && _isCallActive) {
+        setState(() {
+          _callElapsed++;
+        });
+      }
+    });
+  }
+
+  void _endCall() {
+    _callTimer?.cancel();
+    setState(() {
+      _isCallActive = false;
+      _callElapsed = 0;
+    });
+  }
+
+  String _formatCallDuration(int seconds) {
+    final m = (seconds ~/ 60).toString().padLeft(2, '0');
+    final s = (seconds % 60).toString().padLeft(2, '0');
+    return '$m:$s';
   }
 
   void _scrollToBottom() {
@@ -133,16 +168,20 @@ class _ChatScreenState extends State<ChatScreen> {
               },
             ),
             IconButton(
-              icon: const Icon(LucideIcons.phoneCall),
-              onPressed: () {
-                // Future extension: Full voice call mode
-              },
+              icon: Icon(
+                LucideIcons.phoneCall,
+                color: _isCallActive ? Colors.green : accentColor,
+              ),
+              tooltip: 'Gọi thoại',
+              onPressed: _startCall,
             ),
           ],
         ),
-        body: SafeArea(
-          child: Column(
-            children: [
+        body: Stack(
+          children: [
+            SafeArea(
+              child: Column(
+                children: [
               // Message List View
               Expanded(
                 child: BlocConsumer<ChatBloc, ChatState>(
@@ -352,9 +391,12 @@ class _ChatScreenState extends State<ChatScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
+        if (_isCallActive) _buildVoiceCallOverlay(accentColor, surfaceColor),
+      ],
+    ),
+  ),
+);
+}
 
   Widget _buildMessageBubble({
     required ChatMessage message,
@@ -554,6 +596,169 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildVoiceCallOverlay(Color accentColor, Color surfaceColor) {
+    return Positioned.fill(
+      child: Container(
+        color: const Color(0xFF141210).withOpacity(0.96),
+        child: SafeArea(
+          child: Column(
+            children: [
+              const SizedBox(height: 20),
+              // Call Header
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(LucideIcons.x, color: Colors.white70),
+                    onPressed: _endCall,
+                  ),
+                  const Expanded(
+                    child: Text(
+                      'Cuộc gọi thoại với nhân vật',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(width: 48),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                widget.characterName,
+                style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: accentColor.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: accentColor.withOpacity(0.4)),
+                ),
+                child: Text(
+                  _formatCallDuration(_callElapsed),
+                  style: TextStyle(color: accentColor, fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+              ),
+
+              const Spacer(),
+
+              // Character Avatar with Pulsing Rings
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 170,
+                    height: 170,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: accentColor.withOpacity(0.12),
+                    ),
+                  ),
+                  Container(
+                    width: 140,
+                    height: 140,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: accentColor.withOpacity(0.25),
+                    ),
+                  ),
+                  CircleAvatar(
+                    radius: 54,
+                    backgroundImage: widget.characterImageUrl != null && widget.characterImageUrl!.isNotEmpty
+                        ? NetworkImage(widget.characterImageUrl!)
+                        : null,
+                    child: (widget.characterImageUrl == null || widget.characterImageUrl!.isEmpty)
+                        ? Text(
+                            widget.characterName.isNotEmpty ? widget.characterName[0].toUpperCase() : '?',
+                            style: const TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
+                          )
+                        : null,
+                  ),
+                ],
+              ),
+
+              const Spacer(),
+
+              // Call Controls Row (Mic, Hangup, Speaker)
+              BlocBuilder<ChatBloc, ChatState>(
+                builder: (context, state) {
+                  return Padding(
+                    padding: const EdgeInsets.only(left: 24, right: 24, bottom: 32),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        // Mic button (Speech to Text)
+                        GestureDetector(
+                          onTap: () => _toggleRecording(state.isRecording),
+                          child: Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: state.isRecording ? Colors.red : Colors.white12,
+                            ),
+                            child: Icon(
+                              state.isRecording ? Icons.mic : Icons.mic_none,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                          ),
+                        ),
+
+                        // Red Hangup Call Button
+                        GestureDetector(
+                          onTap: _endCall,
+                          child: Container(
+                            width: 72,
+                            height: 72,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.red,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.redAccent,
+                                  blurRadius: 12,
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.call_end,
+                              color: Colors.white,
+                              size: 36,
+                            ),
+                          ),
+                        ),
+
+                        // Auto-speak TTS button
+                        GestureDetector(
+                          onTap: () => _chatBloc.add(ToggleAutoSpeakRequested()),
+                          child: Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: state.autoSpeak ? accentColor : Colors.white12,
+                            ),
+                            child: Icon(
+                              state.autoSpeak ? Icons.volume_up : Icons.volume_off,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

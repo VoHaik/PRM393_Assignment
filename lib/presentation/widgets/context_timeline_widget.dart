@@ -4,6 +4,7 @@ import '../../core/theme/lucide_icons.dart';
 import '../../domain/entities/historical_context.dart';
 import '../historical_context/historical_context_detail_screen.dart';
 import 'context_card.dart';
+import 'in_app_video_player.dart';
 
 int sortYear(HistoricalContext ctx) {
   final y = ctx.year ?? ctx.startYear ?? ctx.endYear;
@@ -188,6 +189,7 @@ class _ContextTimelineWidgetState extends State<ContextTimelineWidget> {
               final ctx = _sortedEvents[index];
               final et = eraThemes[ctx.era] ?? eraThemes[eraThemes.keys.first]!;
               final yearTxt = formatContextYear(ctx);
+              final isDark = theme.brightness == Brightness.dark;
 
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 4.0),
@@ -264,26 +266,51 @@ class _ContextTimelineWidgetState extends State<ContextTimelineWidget> {
                                 Positioned(
                                   top: 12,
                                   right: 12,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.8),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: Colors.amber, width: 1),
-                                    ),
-                                    child: Row(
-                                      children: const [
-                                        Icon(LucideIcons.film, size: 12, color: Colors.amber),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          'Có Video',
-                                          style: TextStyle(
-                                            color: Colors.amber,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.bold,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      showModalBottomSheet(
+                                        context: context,
+                                        isScrollControlled: true,
+                                        backgroundColor: Colors.transparent,
+                                        builder: (_) => Container(
+                                          height: MediaQuery.of(context).size.height * 0.75,
+                                          clipBehavior: Clip.antiAlias,
+                                          decoration: const BoxDecoration(
+                                            color: Colors.black,
+                                            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                                          ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(16.0),
+                                            child: InAppVideoPlayer(
+                                              videoUrl: ctx.videoUrl!,
+                                              title: ctx.name,
+                                              onClose: () => Navigator.pop(context),
+                                            ),
                                           ),
                                         ),
-                                      ],
+                                      );
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withOpacity(0.8),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: Colors.amber, width: 1),
+                                      ),
+                                      child: Row(
+                                        children: const [
+                                          Icon(LucideIcons.film, size: 12, color: Colors.amber),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            'Có Video',
+                                            style: TextStyle(
+                                              color: Colors.amber,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -331,7 +358,7 @@ class _ContextTimelineWidgetState extends State<ContextTimelineWidget> {
                                       ctx.description!,
                                       maxLines: 4,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(fontSize: 13, height: 1.4, color: Colors.white70),
+                                      style: TextStyle(fontSize: 13, height: 1.4, color: isDark ? Colors.white70 : Colors.black87),
                                     ),
                                   ),
                                 const SizedBox(height: 12),

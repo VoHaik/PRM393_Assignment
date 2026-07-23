@@ -78,7 +78,7 @@ class _InAppVideoPlayerState extends State<InAppVideoPlayer> {
           showFullscreenButton: true,
           mute: false,
           enableJavaScript: true,
-          origin: 'https://www.youtube.com',
+          playsInline: true,
         ),
       );
       if (mounted) {
@@ -166,46 +166,78 @@ class _InAppVideoPlayerState extends State<InAppVideoPlayer> {
       return _buildErrorCard(_errorMessage);
     }
 
-    // YouTube Player View using official webview iframe with origin header
-    if (_youtubeController != null) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: YoutubePlayer(
-              controller: _youtubeController!,
-              aspectRatio: 16 / 9,
+    // For YouTube URLs, render YoutubeExternalPlayer matching Mobile React 100%
+    final youtubeId = getYoutubeVideoId(widget.videoUrl);
+    if (youtubeId != null && youtubeId.isNotEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1E2E),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.amber.withOpacity(0.3)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF0000),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFFF0000).withOpacity(0.5),
+                    blurRadius: 12,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.play_arrow_rounded, size: 36, color: Colors.white),
             ),
-          ),
-          const SizedBox(height: 6),
-          Align(
-            alignment: Alignment.centerRight,
-            child: InkWell(
-              onTap: _openExternalBrowser,
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(LucideIcons.externalLink, size: 12, color: Colors.amber.shade400),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Mở trực tiếp trên YouTube',
-                      style: TextStyle(
-                        color: Colors.amber.shade400,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
+            const SizedBox(height: 14),
+            Text(
+              widget.title,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            const Text(
+              'Video YouTube này không cho phát nhúng trong ứng dụng. Hãy mở bằng YouTube, sau đó quay lại để tiếp tục xem nhân vật liên quan.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _openExternalBrowser,
+              icon: const Icon(LucideIcons.externalLink, size: 16),
+              label: const Text('Mở trên YouTube', style: TextStyle(fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF0000),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                minimumSize: const Size.fromHeight(44),
+              ),
+            ),
+            if (widget.onClose != null) ...[
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: widget.onClose,
+                child: const Text('Tiếp tục xem chi tiết', style: TextStyle(color: Colors.white70)),
+              ),
+            ],
+          ],
+        ),
       );
     }
 

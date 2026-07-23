@@ -8,9 +8,22 @@ import 'presentation/auth/auth_bloc.dart';
 import 'presentation/auth/login_screen.dart';
 import 'presentation/main_tabs_screen.dart';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+
 void main() async {
   // Ensure widgets binding is initialized
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase (Analytics & Crashlytics)
+  try {
+    await Firebase.initializeApp();
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+    FirebaseAnalytics.instance.logAppOpen();
+  } catch (e) {
+    debugPrint('Firebase init notice: $e');
+  }
 
   // Load environment variables
   await dotenv.load(fileName: ".env");
@@ -35,13 +48,18 @@ class MyApp extends StatelessWidget {
           create: (_) => di.sl<AuthBloc>()..add(AppStarted()),
         ),
       ],
-      child: MaterialApp(
-        title: 'HistoryTalk',
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system, // Dynamically follow system setting
-        debugShowCheckedModeBanner: false,
-        home: const AuthGateScreen(),
+      child: ValueListenableBuilder<ThemeMode>(
+        valueListenable: themeNotifier,
+        builder: (context, currentThemeMode, _) {
+          return MaterialApp(
+            title: 'HistoryTalk',
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: currentThemeMode,
+            debugShowCheckedModeBanner: false,
+            home: const AuthGateScreen(),
+          );
+        },
       ),
     );
   }

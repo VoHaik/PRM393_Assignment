@@ -3,7 +3,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:historytalk_flutter/core/theme/lucide_icons.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/entities/historical_context.dart';
-import '../../core/theme/app_theme.dart';
 
 // Era Visual Configuration
 class EraTheme {
@@ -236,7 +235,7 @@ class _FullCard extends StatelessWidget {
           children: [
             // Thumbnail
             AspectRatio(
-              aspectRatio: 4 / 3,
+              aspectRatio: 16 / 10,
               child: Stack(
                 children: [
                   Positioned.fill(

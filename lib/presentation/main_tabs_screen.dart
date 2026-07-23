@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:historytalk_flutter/core/theme/lucide_icons.dart';
 import 'home/home_screen.dart';
 import 'contexts/explore_screen.dart';
 import 'quiz/quiz_list_screen.dart';

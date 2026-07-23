@@ -33,15 +33,38 @@ class AppTheme {
       scaffoldBackgroundColor: AppColors.lightBgMain,
       cardColor: AppColors.lightSurface,
       dividerColor: AppColors.lightBorder,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: IconThemeData(color: AppColors.lightTextPrimary),
+        titleTextStyle: TextStyle(
+          color: AppColors.lightTextPrimary,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
       colorScheme: const ColorScheme.light(
         primary: AppColors.lightAccent,
+        onPrimary: Colors.white,
         secondary: AppColors.lightAccentSoft,
+        onSecondary: Colors.white,
         surface: AppColors.lightSurface,
+        onSurface: AppColors.lightTextPrimary,
         error: AppColors.error,
+        onError: Colors.white,
       ),
       textTheme: const TextTheme(
+        headlineLarge: TextStyle(color: AppColors.lightTextPrimary, fontWeight: FontWeight.bold),
+        headlineMedium: TextStyle(color: AppColors.lightTextPrimary, fontWeight: FontWeight.bold),
+        titleLarge: TextStyle(color: AppColors.lightTextPrimary, fontWeight: FontWeight.bold),
+        titleMedium: TextStyle(color: AppColors.lightTextPrimary, fontWeight: FontWeight.w600),
+        titleSmall: TextStyle(color: AppColors.lightTextPrimary, fontWeight: FontWeight.w600),
         bodyLarge: TextStyle(color: AppColors.lightTextPrimary),
         bodyMedium: TextStyle(color: AppColors.lightTextSecondary),
+        bodySmall: TextStyle(color: AppColors.lightTextSecondary),
+        labelLarge: TextStyle(color: AppColors.lightTextPrimary, fontWeight: FontWeight.bold),
+        labelMedium: TextStyle(color: AppColors.lightTextSecondary),
+        labelSmall: TextStyle(color: AppColors.lightTextSecondary),
       ),
     );
   }
@@ -53,16 +76,41 @@ class AppTheme {
       scaffoldBackgroundColor: AppColors.darkBgMain,
       cardColor: AppColors.darkSurface,
       dividerColor: AppColors.darkBorder,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: IconThemeData(color: AppColors.darkTextPrimary),
+        titleTextStyle: TextStyle(
+          color: AppColors.darkTextPrimary,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
       colorScheme: const ColorScheme.dark(
         primary: AppColors.darkAccent,
+        onPrimary: Colors.white,
         secondary: AppColors.darkAccentSoft,
+        onSecondary: Colors.black,
         surface: AppColors.darkSurface,
+        onSurface: AppColors.darkTextPrimary,
         error: AppColors.error,
+        onError: Colors.white,
       ),
       textTheme: const TextTheme(
+        headlineLarge: TextStyle(color: AppColors.darkTextPrimary, fontWeight: FontWeight.bold),
+        headlineMedium: TextStyle(color: AppColors.darkTextPrimary, fontWeight: FontWeight.bold),
+        titleLarge: TextStyle(color: AppColors.darkTextPrimary, fontWeight: FontWeight.bold),
+        titleMedium: TextStyle(color: AppColors.darkTextPrimary, fontWeight: FontWeight.w600),
+        titleSmall: TextStyle(color: AppColors.darkTextPrimary, fontWeight: FontWeight.w600),
         bodyLarge: TextStyle(color: AppColors.darkTextPrimary),
         bodyMedium: TextStyle(color: AppColors.darkTextSecondary),
+        bodySmall: TextStyle(color: AppColors.darkTextSecondary),
+        labelLarge: TextStyle(color: AppColors.darkTextPrimary, fontWeight: FontWeight.bold),
+        labelMedium: TextStyle(color: AppColors.darkTextSecondary),
+        labelSmall: TextStyle(color: AppColors.darkTextSecondary),
       ),
     );
   }
 }
+
+final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier<ThemeMode>(ThemeMode.light);
