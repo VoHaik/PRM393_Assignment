@@ -41,6 +41,6 @@ jobs:
       - name: Report to DeepSource
         run: |
           curl https://deepsource.io/cli | sh
-          ./bin/deepsource report --analyzer dart-analyze --analyzer-type community --value-file dart-results.sarif
+          ./bin/deepsource report --analyzer dart-analyze --analyzer-type community --value-file dart-results.sarif || true
         env:
           DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
