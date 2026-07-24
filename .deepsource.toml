@@ -1,0 +1,13 @@
+version = 1
+
+[[analyzers]]
+name = "dart"
+
+[[analyzers]]
+name = "kotlin"
+
+[[analyzers]]
+name = "swift"
+
+[[analyzers]]
+name = "secrets"
