@@ -1,4 +1,4 @@
-// History talk Application Entry Point
+// History talk Application Entry Point.
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
