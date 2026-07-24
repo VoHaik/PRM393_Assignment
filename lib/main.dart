@@ -16,6 +16,7 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 void main() async {
   // Ensure widgets binding is initialized
   WidgetsFlutterBinding.ensureInitialized();
+  print('Starting History Talk...');
 
   // Initialize Firebase (Analytics & Crashlytics)
   try {
