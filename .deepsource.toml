@@ -2,12 +2,16 @@ version = 1
 
 [[analyzers]]
 name = "dart"
+enabled = true
 
 [[analyzers]]
 name = "kotlin"
+enabled = true
 
 [[analyzers]]
 name = "swift"
+enabled = true
 
 [[analyzers]]
 name = "secrets"
+enabled = true
