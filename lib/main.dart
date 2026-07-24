@@ -53,7 +53,7 @@ class MyApp extends StatelessWidget {
         valueListenable: themeNotifier,
         builder: (context, currentThemeMode, _) {
           return MaterialApp(
-            title: 'HistoryTalk',
+            title: 'History talk',
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: currentThemeMode,
@@ -91,7 +91,7 @@ class AuthGateScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'HistoryTalk',
+                    'History talk',
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
