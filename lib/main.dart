@@ -52,6 +52,7 @@ class MyApp extends StatelessWidget {
       child: ValueListenableBuilder<ThemeMode>(
         valueListenable: themeNotifier,
         builder: (context, currentThemeMode, _) {
+          debugPrint('Starting History Talk App...');
           return MaterialApp(
             title: 'History talk',
             theme: AppTheme.lightTheme,
