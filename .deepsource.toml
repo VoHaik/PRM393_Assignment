@@ -1,7 +1,8 @@
 version = 1
 
 [[analyzers]]
-name = "dart"
+name = "dart-analyze"
+type = "community"
 
 [[analyzers]]
 name = "kotlin"
